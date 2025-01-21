@@ -29,7 +29,7 @@ Ensure the following tools are installed on your system:
 ## Installation
 1. Clone the repository:
 ```bash
-git clone https://github.com/your-repo/ses-management-system.git
+git clone https://github.com/terao-ryohei/ms-support
 ```
 
 2. Install dependencies:
