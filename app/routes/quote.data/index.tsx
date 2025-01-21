@@ -44,8 +44,8 @@ import {
 } from "~/components/table/dropdown-menu";
 import { EditableList } from "~/components/table/editable-list";
 import { EditableTable } from "~/components/table/editable-table";
-import { Input } from "~/components/input";
-import { useToast } from "~/components/toastProvider";
+import { Input } from "~/components/input/input";
+import { useToast } from "~/components/toast/toastProvider";
 import { calcPeriod } from "~/utils/calcPeriod";
 import { type CalcType, calcPrice } from "~/utils/calcPrice";
 import { datePipe } from "~/utils/datePipe";

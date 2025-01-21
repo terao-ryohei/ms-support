@@ -2,7 +2,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Header } from "@tanstack/react-table";
 import type { CSSProperties } from "react";
-import { TableHead } from "../table";
+import { TableHead } from "./table";
 
 export const DraggableTableHeader = <TData,>({
   header,

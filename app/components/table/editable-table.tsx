@@ -9,7 +9,7 @@ import {
 } from "@tanstack/react-table";
 import { DraggableTableHeader } from "./data-table-column-header";
 import { DragAlongCell } from "./drag-along-cell";
-import { Table, TableBody, TableCell, TableHeader, TableRow } from "../table";
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "./table";
 
 export const EditableTable = <T, U>({
   columns,

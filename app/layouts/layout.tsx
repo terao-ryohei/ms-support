@@ -1,6 +1,6 @@
 import { Link, useLocation } from "@remix-run/react";
 import type { ReactNode } from "react";
-import { ToastProvider } from "~/components/toastProvider";
+import { ToastProvider } from "~/components/toast/toastProvider";
 
 type NavItemProps = {
   href: string;

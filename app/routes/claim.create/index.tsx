@@ -1,87 +1,64 @@
-import type { LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { useLoaderData } from "@remix-run/react";
-import { hc } from "hono/client";
 import { useEffect, useState } from "react";
 import { useWatch } from "react-hook-form";
 import { useRemixForm } from "remix-hook-form";
-import type { AppType } from "server";
-import type { QuoteValues, RoundType } from "server/api/quote/excel";
-import { DateRangePicker } from "~/components/date-picker/date-range-picker";
-import { Input } from "~/components/input";
-import { Select } from "~/components/select";
+import type { ClaimValues, RoundType } from "server/api/claim/excel";
+import { Input } from "~/components/input/input";
+import { Select } from "~/components/input/select";
 import { calcPeriod } from "~/utils/calcPeriod";
 import { type CalcType, calcPrice } from "~/utils/calcPrice";
 import { datePipe } from "~/utils/datePipe";
-import { dlBlob } from "~/utils/dlBlob";
 import { calcComma } from "~/utils/price";
-import { isHasUndefined } from "~/utils/typeGuard";
+import { defaultValue } from "./defaultValue";
+import { contractLoader } from "./loader";
+import { submit } from "./submit";
 
-const client = hc<AppType>(import.meta.env.VITE_API_URL);
-
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const url = new URL(request.url);
-  const param = url.searchParams;
-  const res = await client.api.contract.$get({
-    query: { id: param.get("id") ?? "", type: "customer" },
-  });
-
-  return res;
-};
-
-const today = new Date();
-
-export const defaultValue = {
-  Initial: "",
-  Period: "",
-  ContractFrom: datePipe(
-    new Date(today.getFullYear(), today.getMonth() - 1, 1),
-  ),
-  ContractTo: datePipe(new Date(today.getFullYear(), today.getMonth(), 0)),
-  PaidFrom: 140,
-  PaidTo: 180,
-  ContractType: "",
-  Document: "",
-  WorkPrice: 60,
-  RoundType: "round" as RoundType,
-  RoundDigit: 1,
-  OverPrice: 0,
-  UnderPrice: 0,
-  CalcType: "highLow" as CalcType,
-};
+export const loader = contractLoader;
 
 export default function Index() {
+  const today = new Date();
   const { contractData } = useLoaderData<typeof loader>();
 
-  const { getValues, register, control, setValue } = useRemixForm<QuoteValues>({
+  const [total, setTotal] = useState("0");
+
+  const { getValues, register, control, setValue } = useRemixForm<ClaimValues>({
     defaultValues: {
       ...defaultValue,
       Initial: "",
       Period: calcPeriod(contractData.periodDate),
+      ClaimFrom: datePipe(
+        new Date(today.getFullYear(), today.getMonth() - 1, 1),
+      ),
+      ClaimTo: datePipe(new Date(today.getFullYear(), today.getMonth(), 0)),
       PaidFrom: contractData.paidFrom,
       PaidTo: contractData.paidTo,
+      OtherPrice: 0,
+      WorkTime: 1.0,
+      OverTime: 0.0,
+      UnderTime: 0.0,
+      OverPrice: contractData.overPrice,
+      UnderPrice: contractData.underPrice,
       WorkPrice: contractData.workPrice,
       RoundType: contractData.roundType as RoundType,
+      CalcType: contractData.calcType as CalcType,
       RoundDigit: contractData.roundDigit,
       Subject: contractData.subject,
-      Document: contractData.document,
-      ContractType: contractData.contractType,
     },
   });
 
-  const [date, setDate] = useState<(Date | undefined)[]>([
-    new Date(contractData.contractRange.split("~")[0]),
-    new Date(contractData.contractRange.split("~")[1]),
-  ]);
-
   const {
     WorkPrice = 0,
+    WorkTime = 0,
+    OtherPrice = 0,
+    UnderTime = 0,
+    OverTime = 0,
     PaidFrom = 0,
     PaidTo = 0,
+    OverPrice = 0,
+    UnderPrice = 0,
     RoundType: RoundTypeValue = "round",
     RoundDigit = 1,
     CalcType = "highLow",
-    OverPrice = 0,
-    UnderPrice = 0,
   } = useWatch({ control });
 
   useEffect(() => {
@@ -96,91 +73,33 @@ export default function Index() {
 
     setValue("OverPrice", overPrice);
     setValue("UnderPrice", underPrice);
+
+    setTotal(
+      calcComma(
+        WorkPrice * WorkTime +
+          (contractData.isHour ? 0 : overPrice * OverTime) -
+          (contractData.isHour ? 0 : underPrice * UnderTime) +
+          OtherPrice,
+      ),
+    );
   }, [
     RoundTypeValue,
     WorkPrice,
+    WorkTime,
+    OtherPrice,
+    UnderTime,
+    OverTime,
     PaidFrom,
     PaidTo,
     RoundDigit,
+    contractData,
     CalcType,
     setValue,
   ]);
 
-  const handleSubmit = async () => {
-    try {
-      const value = getValues();
-      // APIリクエストなどの処理をここに記述
-      if (value) {
-        const formData = {
-          ...value,
-          OverPrice,
-          UnderPrice,
-          Sales: contractData?.sales ?? "",
-          Company: contractData?.company ?? "",
-          Worker: contractData?.worker ?? "",
-        } as QuoteValues;
-
-        if (isHasUndefined(formData)) {
-          await client.api.contract.$put({
-            json: {
-              id: contractData.id,
-              values: {
-                from: value.ContractFrom,
-                to: value.ContractTo,
-                subject: value.Subject,
-                document: value.Document,
-                contractType: value.ContractType,
-              },
-            },
-          });
-          await client.api.payment.$put({
-            json: {
-              id: contractData.paymentId,
-              values: {
-                workPrice: value.WorkPrice,
-                paidFrom: value.PaidFrom,
-                paidTo: value.PaidTo,
-                roundType: value.RoundType,
-                roundDigit: value.RoundDigit,
-                periodDate: value.Period,
-              },
-            },
-          });
-
-          const from = new Date(value.ContractFrom);
-          const to = new Date(value.ContractTo);
-
-          const response = await client.api.quote.excel.$post({
-            json: {
-              ...formData,
-              url: import.meta.env.VITE_API_URL,
-              isHour: contractData.isHour,
-              isFixed: contractData.isFixed,
-              ContractRange:
-                Number(`${to.getFullYear()}${to.getMonth()}`) -
-                Number(`${from.getFullYear()}${from.getMonth()}`),
-            },
-          });
-          await dlBlob({
-            response,
-            worker: contractData?.worker ?? "",
-            type: "quote",
-          });
-        } else {
-          alert("フォームを埋めてください");
-        }
-      } else {
-        alert("フォームを埋めてください");
-      }
-    } catch (error) {
-      console.error("Form submission error:", error);
-      alert("予期せぬエラーです");
-    }
-  };
-
   return (
     <div className="container mx-auto px-4">
-      <h1 className="mb-5 text-left font-bold text-3xl">見積書作成装置</h1>
+      <h1 className="mb-5 text-left font-bold text-3xl">請求書作成装置</h1>
       <div className="flex gap-2">
         <div className="form-wrap mx-12 flex flex-1 flex-col rounded-lg bg-gray-800 p-5 text-white">
           {contractData.isHour && (
@@ -195,15 +114,15 @@ export default function Index() {
           )}
           <span className="mt-2 mb-2 font-bold text-sm">顧客担当</span>
           <h2 className="mb-2 ml-2 font-bold text-xl underline underline-offset-4">
-            {contractData?.sales}
+            {contractData.sales}
           </h2>
           <span className="mt-2 mb-2 font-bold text-sm">顧客</span>
           <h2 className="mb-2 ml-2 font-bold text-xl underline underline-offset-4">
-            {contractData?.company}
+            {contractData.company}
           </h2>
           <span className="mt-2 mb-2 font-bold text-sm">作業者名</span>
           <h2 className="mb-2 ml-2 font-bold text-xl underline underline-offset-4">
-            {contractData?.worker}
+            {contractData.worker}
           </h2>
           {!contractData.isHour && (
             <div className="mt-auto">
@@ -243,6 +162,12 @@ export default function Index() {
               )}
             </div>
           )}
+          <div className="mt-10">
+            <div className="total font-bold text-lg">合計額:</div>
+            <div className="price text-right font-extrabold font-num text-2xl">
+              {total}
+            </div>
+          </div>
         </div>
         <div className="form-wrap flex flex-1 flex-col rounded-lg bg-gray-100 p-5">
           <span className="mt-2 mb-2 font-bold text-sm">
@@ -256,30 +181,21 @@ export default function Index() {
           <span className="mt-2 mb-2 font-bold text-sm">件名</span>
           <Input register={register("Subject")} placeholder="開発業務" />
           <span className="mt-2 mb-2 font-bold text-sm">支払期日</span>
-          <Input
-            register={register("Period")}
-            placeholder="月末締め翌々月15日御支払"
-          />
-          <span className="mt-2 mb-2 font-bold text-sm">契約期間</span>
-          <div className="mb-2 w-full">
-            <DateRangePicker
-              initialDateFrom={date[0]}
-              initialDateTo={date[1]}
-              onUpdate={({ range: { from, to } }) => {
-                if (from && to) {
-                  setDate([from, to]);
-                }
-              }}
-            />
+          <Input register={register("Period")} type="date" />
+          <span className="mt-2 mb-2 font-bold text-sm">請求期間</span>
+          <div className="range mb-2 flex items-center gap-2">
+            <Input register={register("ClaimFrom")} type="date" />
+            ~
+            <Input register={register("ClaimTo")} type="date" />
           </div>
-          <span className="mt-2 mb-2 font-bold text-sm">基準時間(h)</span>
+          <span className="mt-2 mb-2 font-bold text-sm">清算幅(h)</span>
           <div className="range mb-5 flex items-center gap-2">
             <Input
               register={register("PaidFrom", { valueAsNumber: true })}
               type="number"
               inputMode="numeric"
               placeholder="140"
-              disable={contractData.isFixed}
+              disable={contractData.isHour || contractData.isFixed}
             />
             ~
             <Input
@@ -287,11 +203,12 @@ export default function Index() {
               type="number"
               inputMode="numeric"
               placeholder="180"
+              disable={contractData.isHour || contractData.isFixed}
             />
           </div>
           <div className="mb-5 grid grid-cols-3 gap-5">
             <div className="flex flex-col">
-              <span className="mb-2 font-bold text-sm">単価(万)</span>
+              <span className="mb-2 font-bold text-sm">入単価</span>
               <Input
                 register={register("WorkPrice", { valueAsNumber: true })}
                 type="number"
@@ -352,23 +269,56 @@ export default function Index() {
               />
             </div>
           </div>
-          <div className="mb-5 grid grid-cols-2 gap-5">
+          <div className="mb-5 grid grid-cols-3 gap-5">
             <div className="flex flex-col">
-              <span className="mt-2 mb-2 font-bold text-sm">成果物</span>
-              <Input register={register("Document")} placeholder="作業報告書" />
+              <span className="mb-2 font-bold text-sm">
+                {contractData.isHour ? "作業人時" : "作業人月"}
+              </span>
+              <Input
+                register={register("WorkTime", { valueAsNumber: true })}
+                type="number"
+                inputMode="numeric"
+                placeholder="1.0"
+              />
             </div>
             <div className="flex flex-col">
-              <span className="mt-2 mb-2 font-bold text-sm">契約形態</span>
+              <span className="mb-2 font-bold text-sm">超過工数(h)</span>
               <Input
-                register={register("ContractType")}
-                placeholder="業務委託"
+                register={register("OverTime", { valueAsNumber: true })}
+                type="number"
+                inputMode="numeric"
+                placeholder="0.0"
+                disable={contractData.isFixed}
+              />
+            </div>
+            <div className="flex flex-col">
+              <span className="mb-2 font-bold text-sm">控除工数(h)</span>
+              <Input
+                register={register("UnderTime", { valueAsNumber: true })}
+                type="number"
+                inputMode="numeric"
+                placeholder="0.0"
+                disable={contractData.isFixed}
               />
             </div>
           </div>
+          <span className="mt-2 mb-2 font-bold text-sm">その他費用</span>
+          <Input
+            register={register("OtherPrice", { valueAsNumber: true })}
+            type="number"
+            inputMode="numeric"
+            placeholder="0"
+          />
           <button
             type="button"
             className="mt-5 h-14 rounded-md bg-teal-500 px-4 py-2 font-bold text-white shadow-md hover:bg-teal-600"
-            onClick={handleSubmit}
+            onClick={() => {
+              submit(getValues(), {
+                ...contractData,
+                overPrice: OverPrice,
+                underPrice: UnderPrice,
+              });
+            }}
           >
             Excelを出力する
           </button>

@@ -1,7 +1,7 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { type Cell, flexRender } from "@tanstack/react-table";
 import type { CSSProperties } from "react";
-import { TableCell } from "../table";
+import { TableCell } from "./table";
 import { CSS } from "@dnd-kit/utilities";
 
 export const DragAlongCell = <TData,>({

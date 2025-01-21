@@ -1,59 +1,24 @@
-import type { LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { useLoaderData } from "@remix-run/react";
-import { hc } from "hono/client";
 import { useEffect, useState } from "react";
 import { useWatch } from "react-hook-form";
 import { useRemixForm } from "remix-hook-form";
-import type { AppType } from "server";
-import type { RoundType } from "server/api/claim/excel";
-import type { OrderValues } from "server/api/order/excel";
+import type { QuoteValues, RoundType } from "server/api/quote/excel";
 import { DateRangePicker } from "~/components/date-picker/date-range-picker";
-import { Input } from "~/components/input";
-import { Select } from "~/components/select";
+import { Input } from "~/components/input/input";
+import { Select } from "~/components/input/select";
 import { calcPeriod } from "~/utils/calcPeriod";
-import { calcPrice, type CalcType } from "~/utils/calcPrice";
-import { datePipe } from "~/utils/datePipe";
-import { dlBlob } from "~/utils/dlBlob";
+import { calcPrice } from "~/utils/calcPrice";
 import { calcComma } from "~/utils/price";
-import { isHasUndefined } from "~/utils/typeGuard";
+import { defaultValue } from "./defaultValue";
+import { contractLoader } from "./loader";
+import { submit } from "./submit";
 
-const client = hc<AppType>(import.meta.env.VITE_API_URL);
-
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const url = new URL(request.url);
-  const param = url.searchParams;
-  const res = await client.api.contract.$get({
-    query: { id: param.get("id") ?? "", type: "partner" },
-  });
-
-  return res;
-};
-
-const today = new Date();
-
-export const defaultValue = {
-  Initial: "",
-  Period: "",
-  ContractFrom: datePipe(
-    new Date(today.getFullYear(), today.getMonth() - 1, 1),
-  ),
-  ContractTo: datePipe(new Date(today.getFullYear(), today.getMonth(), 0)),
-  PaidFrom: 140,
-  PaidTo: 180,
-  ContractType: "",
-  Document: "",
-  WorkPrice: 60,
-  RoundType: "round" as RoundType,
-  RoundDigit: 1,
-  OverPrice: 0,
-  UnderPrice: 0,
-  CalcType: "highLow" as CalcType,
-};
+export const loader = contractLoader;
 
 export default function Index() {
   const { contractData } = useLoaderData<typeof loader>();
 
-  const { getValues, register, control, setValue } = useRemixForm<OrderValues>({
+  const { getValues, register, control, setValue } = useRemixForm<QuoteValues>({
     defaultValues: {
       ...defaultValue,
       Initial: "",
@@ -107,75 +72,9 @@ export default function Index() {
     setValue,
   ]);
 
-  const handleSubmit = async () => {
-    try {
-      const value = getValues();
-      // APIリクエストなどの処理をここに記述
-      if (value) {
-        const formData = {
-          ...value,
-          OverPrice,
-          UnderPrice,
-          Sales: contractData?.sales ?? "",
-          Company: contractData?.company ?? "",
-          Worker: contractData?.worker ?? "",
-        } as OrderValues;
-
-        if (isHasUndefined(formData)) {
-          await client.api.contract.$put({
-            json: {
-              id: contractData.id,
-              values: {
-                from: value.ContractFrom,
-                to: value.ContractTo,
-                subject: value.Subject,
-                document: value.Document,
-                contractType: value.ContractType,
-              },
-            },
-          });
-          await client.api.payment.$put({
-            json: {
-              id: contractData.paymentId,
-              values: {
-                workPrice: value.WorkPrice,
-                paidFrom: value.PaidFrom,
-                paidTo: value.PaidTo,
-                roundType: value.RoundType,
-                roundDigit: value.RoundDigit,
-                periodDate: value.Period,
-              },
-            },
-          });
-
-          const response = await client.api.order.excel.$post({
-            json: {
-              ...formData,
-              url: import.meta.env.VITE_API_URL,
-              isHour: contractData.isHour,
-              isFixed: contractData.isFixed,
-            },
-          });
-          await dlBlob({
-            response,
-            worker: contractData?.worker ?? "",
-            type: "order",
-          });
-        } else {
-          alert("フォームを埋めてください");
-        }
-      } else {
-        alert("フォームを埋めてください");
-      }
-    } catch (error) {
-      console.error("Form submission error:", error);
-      alert("予期せぬエラーです");
-    }
-  };
-
   return (
     <div className="container mx-auto px-4">
-      <h1 className="mb-5 text-left font-bold text-3xl">注文書作成装置</h1>
+      <h1 className="mb-5 text-left font-bold text-3xl">見積書作成装置</h1>
       <div className="flex gap-2">
         <div className="form-wrap mx-12 flex flex-1 flex-col rounded-lg bg-gray-800 p-5 text-white">
           {contractData.isHour && (
@@ -188,11 +87,11 @@ export default function Index() {
               固定清算
             </h2>
           )}
-          <span className="mt-2 mb-2 font-bold text-sm">要員担当</span>
+          <span className="mt-2 mb-2 font-bold text-sm">顧客担当</span>
           <h2 className="mb-2 ml-2 font-bold text-xl underline underline-offset-4">
             {contractData?.sales}
           </h2>
-          <span className="mt-2 mb-2 font-bold text-sm">所属</span>
+          <span className="mt-2 mb-2 font-bold text-sm">顧客</span>
           <h2 className="mb-2 ml-2 font-bold text-xl underline underline-offset-4">
             {contractData?.company}
           </h2>
@@ -286,7 +185,7 @@ export default function Index() {
           </div>
           <div className="mb-5 grid grid-cols-3 gap-5">
             <div className="flex flex-col">
-              <span className="mb-2 font-bold text-sm">出単価(万)</span>
+              <span className="mb-2 font-bold text-sm">単価(万)</span>
               <Input
                 register={register("WorkPrice", { valueAsNumber: true })}
                 type="number"
@@ -363,7 +262,13 @@ export default function Index() {
           <button
             type="button"
             className="mt-5 h-14 rounded-md bg-teal-500 px-4 py-2 font-bold text-white shadow-md hover:bg-teal-600"
-            onClick={handleSubmit}
+            onClick={() => {
+              submit(getValues(), {
+                ...contractData,
+                overPrice: OverPrice,
+                underPrice: UnderPrice,
+              });
+            }}
           >
             Excelを出力する
           </button>

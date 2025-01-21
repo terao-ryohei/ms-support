@@ -10,13 +10,14 @@ import {
 } from "@dnd-kit/core";
 import { restrictToHorizontalAxis } from "@dnd-kit/modifiers";
 import { arrayMove } from "@dnd-kit/sortable";
-import { useLoaderData } from "@remix-run/react";
+import { Link, useLoaderData } from "@remix-run/react";
 import { compareItems, rankItem } from "@tanstack/match-sorter-utils";
 import {
   type CellContext,
   type ColumnDef,
   type ColumnFiltersState,
   type FilterFn,
+  type Row,
   type RowSelectionState,
   type SortingFn,
   type SortingState,
@@ -29,10 +30,10 @@ import {
 } from "@tanstack/react-table";
 import { hc } from "hono/client";
 import { useCallback, useMemo, useState } from "react";
+import { useRemixForm } from "remix-hook-form";
 import type { AppType } from "server";
+import type { ClaimValues, RoundType } from "server/api/claim/excel";
 import { EditableCell } from "~/components/table/data-table-editable-row";
-import { RemoveRowCell } from "~/components/table/data-table-remove-row";
-import { DateRangePicker } from "~/components/date-picker/date-range-picker";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -41,40 +42,40 @@ import {
 } from "~/components/table/dropdown-menu";
 import { EditableList } from "~/components/table/editable-list";
 import { EditableTable } from "~/components/table/editable-table";
-import { useToast } from "~/components/toastProvider";
+import { Input } from "~/components/input/input";
+import { useToast } from "~/components/toast/toastProvider";
+import { calcPeriod } from "~/utils/calcPeriod";
+import { calcPrice, type CalcType } from "~/utils/calcPrice";
 import { datePipe } from "~/utils/datePipe";
 import { defaultData } from "~/utils/default";
-import { calcComma } from "~/utils/price";
+import { dlBlob } from "~/utils/dlBlob";
+import { isHasUndefined } from "~/utils/typeGuard";
 
 const translatedArray = {
   id: "契約ID",
+  isHour: "時給",
+  isFixed: "固定",
   worker: "作業者名",
-  claimSales: "営業担当",
-  orderSales: "要員担当",
-  claimCompany: "顧客",
-  orderCompany: "所属",
+  company: "顧客",
+  sales: "営業担当",
   subject: "案件名",
-  contractRange: "契約期間",
-  claimPrice: "入単価",
-  orderPrice: "出単価",
-  profit: "粗利",
-  profitRatio: "粗利率",
-  claimPaidTo: "入清算上限",
-  claimPaidFrom: "入清算下限",
-  claimRoundType: "入丸めタイプ",
-  claimRoundDigit: "入丸め桁",
-  claimPeriodDate: "入金期日",
-  orderPaidTo: "出清算上限",
-  orderPaidFrom: "出清算下限",
-  orderRoundType: "出丸めタイプ",
-  orderRoundDigit: "出丸め桁",
-  orderPeriodDate: "出金期日",
+  periodDate: "支払期日",
+  workPrice: "出単価",
+  paidFrom: "清算幅（下限）",
+  paidTo: "清算幅（上限）",
+  calcType: "超過控除の計算",
+  overPrice: "超過単価",
+  underPrice: "控除単価",
 };
 
 const client = hc<AppType>(import.meta.env.VITE_API_URL);
 
 export const loader = async () => {
-  const contractData = await (await client.api.contract.payment.$get()).json();
+  const contractData = await (
+    await client.api.contract.all.$get({
+      query: { type: "customer" },
+    })
+  ).json();
   const salesData = await (await client.api.sales.$get()).json();
   const companiesData = await (await client.api.companies.$get()).json();
   const workersData = await (await client.api.workers.$get()).json();
@@ -86,25 +87,7 @@ export default function Index() {
     useLoaderData<typeof loader>();
   type ContractData = typeof contractData extends (infer U)[] ? U : never;
 
-  const openToast = useToast();
-
-  const [data, setData] = useState(
-    contractData.map((data) => ({
-      ...data,
-      claimPrice: data.claimPayment.workPrice,
-      orderPrice: data.orderPayment.workPrice,
-      claimPaidTo: data.claimPayment.paidTo,
-      claimPaidFrom: data.claimPayment.paidFrom,
-      claimRoundType: data.claimPayment.roundType,
-      claimRoundDigit: data.claimPayment.roundDigit,
-      orderPaidTo: data.orderPayment.paidTo,
-      orderPaidFrom: data.orderPayment.paidFrom,
-      orderRoundType: data.orderPayment.roundType,
-      orderRoundDigit: data.orderPayment.roundDigit,
-      claimPeriodDate: data.claimPayment.periodDate,
-      orderPeriodDate: data.orderPayment.periodDate,
-    })),
-  );
+  const [data, setData] = useState<typeof contractData>(contractData);
   const [salesList, setSalesList] = useState<typeof salesData>(salesData);
   const [companiesList, setCompaniesList] =
     useState<typeof companiesData>(companiesData);
@@ -115,9 +98,16 @@ export default function Index() {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [columnOrder, setColumnOrder] = useState<string[]>([
+    "select-col",
+    "claim",
     ...Object.keys(translatedArray),
-    "remove",
   ]);
+
+  const openToast = useToast();
+
+  const { register, getValues } = useRemixForm<{ initial: string }>({
+    defaultValues: { initial: "" },
+  });
 
   const onUpdate = useCallback(
     (columnId: string, value: string, type: "更新" | "追加" | "削除") => {
@@ -155,6 +145,31 @@ export default function Index() {
 
   const columns: ColumnDef<ContractData>[] = useMemo(
     () => [
+      {
+        id: "select-col",
+        cell: ({ row }) => (
+          <input
+            type="checkbox"
+            checked={row.getIsSelected()}
+            disabled={!row.getCanSelect()}
+            onChange={row.getToggleSelectedHandler()}
+          />
+        ),
+      },
+      {
+        id: "claim",
+        cell: (c: CellContext<ContractData, string>) => (
+          <div className="flex items-center space-x-2">
+            <Link
+              to={`/claim/create/?id=${c.row.getValue("id")}`}
+              className="mx-auto w-full text-nowrap rounded-lg bg-orange-400 px-1 py-2 font-bold"
+            >
+              請求書
+            </Link>
+          </div>
+        ),
+      },
+
       ...Object.values(translatedArray).map((_, i) => {
         return {
           accessorKey: Object.keys(translatedArray)[i],
@@ -163,72 +178,16 @@ export default function Index() {
             switch (c.column.id) {
               case "id":
                 return <span>{c.cell.getValue()}</span>;
-              case "profit":
-                return (
-                  <div>
-                    {calcComma(
-                      Number(
-                        String(c.row.getValue("claimPrice")).replaceAll(
-                          /\D/g,
-                          "",
-                        ),
-                      ) -
-                        Number(
-                          String(c.row.getValue("orderPrice")).replaceAll(
-                            /\D/g,
-                            "",
-                          ),
-                        ),
-                    )}
-                  </div>
-                );
-              case "profitRatio":
-                return (
-                  <div>
-                    {Math.round(
-                      ((Number(
-                        String(c.row.getValue("claimPrice")).replaceAll(
-                          /\D/g,
-                          "",
-                        ),
-                      ) -
-                        Number(
-                          String(c.row.getValue("orderPrice")).replaceAll(
-                            /\D/g,
-                            "",
-                          ),
-                        )) /
-                        Number(
-                          String(c.row.getValue("claimPrice")).replaceAll(
-                            /\D/g,
-                            "",
-                          ),
-                        )) *
-                        100 *
-                        10 ** 3,
-                    ) /
-                      10 ** 3}
-                    %
-                  </div>
-                );
-              case "claimSales":
-              case "orderSales":
+              case "sales":
                 return (
                   <EditableList
                     data={salesList}
-                    value={
-                      (c.column.id === "claimSales"
-                        ? data[c.row.index].claimSalesId
-                        : data[c.row.index].orderSalesId) ?? 0
-                    }
+                    value={data[c.row.index].salesId ?? 0}
                     onChange={(value: string) => {
                       client.api.relation.$put({
                         json: {
                           id: data[c.row.index].id,
-                          mode:
-                            c.column.id === "claimSales"
-                              ? "customer"
-                              : "partner",
+                          mode: "customer",
                           type: "salesId",
                           value: Number(value),
                         },
@@ -277,24 +236,16 @@ export default function Index() {
                     }}
                   />
                 );
-              case "claimCompany":
-              case "orderCompany":
+              case "company":
                 return (
                   <EditableList
                     data={companiesList}
-                    value={
-                      (c.column.id === "claimCompany"
-                        ? data[c.row.index].claimCompanyId
-                        : data[c.row.index].orderCompanyId) ?? 0
-                    }
+                    value={data[c.row.index].companyId ?? 0}
                     onChange={(value: string) => {
                       client.api.relation.$put({
                         json: {
                           id: data[c.row.index].id,
-                          mode:
-                            c.column.id === "claimCompany"
-                              ? "customer"
-                              : "partner",
+                          mode: "customer",
                           type: "companyId",
                           value: Number(value),
                         },
@@ -352,10 +303,7 @@ export default function Index() {
                       client.api.relation.$put({
                         json: {
                           id: data[c.row.index].id,
-                          mode:
-                            c.column.id === "claimCompany"
-                              ? "customer"
-                              : "partner",
+                          mode: "customer",
                           type: "workerId",
                           value: Number(value),
                         },
@@ -404,39 +352,14 @@ export default function Index() {
                     }}
                   />
                 );
-              case "contractRange":
-                return (
-                  <DateRangePicker
-                    initialDateFrom={c.cell.getValue().split("~")[0]}
-                    initialDateTo={c.cell.getValue().split("~")[1]}
-                    onUpdate={({ range: { from, to } }) => {
-                      if (from && to) {
-                        client.api.contract.$put({
-                          json: {
-                            id: data[c.row.index].id,
-                            values: { from: datePipe(from), to: datePipe(to) },
-                          },
-                        });
-                        onUpdate(
-                          c.column.id,
-                          `${datePipe(from)}~${datePipe(to)}`,
-                          "更新",
-                        );
-                      }
-                    }}
-                  />
-                );
               default:
                 return EditableCell(c);
             }
           },
           sortingFn: fuzzySort,
+          size: Object.keys(translatedArray)[i] === "subject" ? 300 : undefined,
         };
       }),
-      {
-        id: "remove",
-        cell: RemoveRowCell,
-      },
     ],
     [fuzzySort, onUpdate, data, salesList, companiesList, workersList],
   );
@@ -446,94 +369,68 @@ export default function Index() {
       if (value === null || value === "") {
         return;
       }
+
+      if (
+        columnId === "calcType" ||
+        columnId === "price" ||
+        columnId === "paidTo" ||
+        columnId === "paidFrom" ||
+        columnId === "roundType" ||
+        columnId === "roundDigit"
+      ) {
+        const { overPrice, underPrice } = calcPrice({
+          workPrice: data[rowIndex].workPrice,
+          from: data[rowIndex].paidFrom,
+          to: data[rowIndex].paidTo,
+          roundType: data[rowIndex].roundType as RoundType,
+          roundDigit: data[rowIndex].roundDigit,
+          calcType: value as CalcType,
+        });
+        setData((data) => {
+          data[rowIndex].overPrice = overPrice;
+          data[rowIndex].underPrice = underPrice;
+          return data;
+        });
+        await client.api.payment.$put({
+          json: {
+            values: {
+              overPrice,
+              underPrice,
+            },
+            id: data[rowIndex].id,
+          },
+        });
+      }
+
       switch (columnId) {
-        case "claimSales":
-        case "orderSales":
-        case "claimCompany":
-        case "orderCompany":
+        case "sales":
+        case "company":
         case "worker":
           break;
-        case "claimPrice":
-        case "claimPaidFrom":
-        case "claimPaidTo":
-        case "claimRoundDigit": {
-          let columnName =
-            columnId.replaceAll("claim", "")[0].toLowerCase() +
-            columnId.replaceAll("claim", "").slice(1);
-          if (columnName === "price") {
-            columnName = "workPrice";
-          }
+        case "workPrice":
+        case "paidFrom":
+        case "paidTo":
+        case "roundDigit":
           await client.api.payment.$put({
             json: {
-              values: {
-                [columnName]: Number(value.replaceAll(/\D/g, "")),
-              },
-              id: data[rowIndex].claimPayment.paymentId,
+              values: { [columnId]: Number(value.replaceAll(/\D/g, "")) },
+              id: data[rowIndex].paymentId,
             },
           });
           break;
-        }
-        case "orderPrice":
-        case "orderPaidFrom":
-        case "orderPaidTo":
-        case "orderRoundDigit": {
-          let columnName =
-            columnId.replaceAll("order", "")[0].toLowerCase() +
-            columnId.replaceAll("order", "").slice(1);
-          if (columnName === "price") {
-            columnName = "workPrice";
-          }
-          await client.api.payment.$put({
-            json: {
-              values: {
-                [columnName]: Number(value.replaceAll(/\D/g, "")),
-              },
-              id: data[rowIndex].orderPayment.paymentId,
-            },
-          });
-          break;
-        }
-        case "contractRange":
-          await client.api.contract.$put({
-            json: {
-              values: { from: value.split("~")[0], to: value.split("~")[1] },
-              id: data[rowIndex].id,
-            },
-          });
-          break;
-        case "claimRoundType":
-        case "claimPeriodDate": {
-          const columnName =
-            columnId.replaceAll("claim", "")[0].toLowerCase() +
-            columnId.replaceAll("claim", "").slice(1);
-          await client.api.payment.$put({
-            json: {
-              values: {
-                [columnName]: value,
-              },
-              id: data[rowIndex].claimPayment.paymentId,
-            },
-          });
-          break;
-        }
-        case "orderRoundType":
-        case "orderPeriodDate": {
-          const columnName =
-            columnId.replaceAll("order", "")[0].toLowerCase() +
-            columnId.replaceAll("order", "").slice(1);
-          await client.api.payment.$put({
-            json: {
-              values: {
-                [columnName]: value,
-              },
-              id: data[rowIndex].orderPayment.paymentId,
-            },
-          });
-          break;
-        }
-        default:
+        case "subject":
+        case "document":
+        case "contractType":
           await client.api.contract.$put({
             json: { values: { [columnId]: value }, id: data[rowIndex].id },
+          });
+          break;
+        default:
+          await client.api.payment.$put({
+            json: {
+              values: { [columnId]: value },
+              id: data[rowIndex].paymentId,
+            },
           });
           break;
       }
@@ -554,60 +451,38 @@ export default function Index() {
   );
 
   const addRow = async () => {
-    await (
-      await client.api.contract.$post({
-        json: {
-          contract: {
-            worker: defaultData.worker,
-            company: defaultData.company,
-            sales: defaultData.sales,
-            from: defaultData.contractRange.split("~")[0],
-            to: defaultData.contractRange.split("~")[1],
-            contractType: defaultData.contractType,
-            subject: defaultData.subject,
-            document: defaultData.document,
-          },
-          payment: {
-            paidFrom: defaultData.paidFrom,
-            paidTo: defaultData.paidTo,
-            isHour: defaultData.isHour,
-            periodDate: defaultData.periodDate,
-            workPrice: defaultData.workPrice,
-            roundDigit: defaultData.roundDigit,
-            roundType: defaultData.roundType,
-            calcType: defaultData.calcType,
-            overPrice: defaultData.overPrice,
-            underPrice: defaultData.underPrice,
-            isFixed: defaultData.isFixed,
-          },
+    await client.api.contract.$post({
+      json: {
+        contract: {
+          worker: defaultData.worker,
+          company: defaultData.company,
+          sales: defaultData.sales,
+          from: defaultData.contractRange.split("~")[0],
+          to: defaultData.contractRange.split("~")[1],
+          contractType: defaultData.contractType,
+          subject: defaultData.subject,
+          document: defaultData.document,
         },
-      })
-    ).json();
-
-    await (await client.api.contract.payment.$get()).json().then((newData) => {
-      setData(
-        newData.map((data) => ({
-          ...data,
-          claimPrice: data.claimPayment.workPrice,
-          orderPrice: data.orderPayment.workPrice,
-          claimPaidTo: data.claimPayment.paidTo,
-          claimPaidFrom: data.claimPayment.paidFrom,
-          claimRoundType: data.claimPayment.roundType,
-          claimRoundDigit: data.claimPayment.roundDigit,
-          orderPaidTo: data.orderPayment.paidTo,
-          orderPaidFrom: data.orderPayment.paidFrom,
-          orderRoundType: data.orderPayment.roundType,
-          orderRoundDigit: data.orderPayment.roundDigit,
-          claimPeriodDate: data.claimPayment.periodDate,
-          orderPeriodDate: data.orderPayment.periodDate,
-        })),
-      );
+        payment: {
+          paidFrom: defaultData.paidFrom,
+          paidTo: defaultData.paidTo,
+          isHour: defaultData.isHour,
+          periodDate: defaultData.periodDate,
+          workPrice: defaultData.workPrice,
+          roundDigit: defaultData.roundDigit,
+          roundType: defaultData.roundType,
+          calcType: defaultData.calcType,
+          overPrice: defaultData.overPrice,
+          underPrice: defaultData.underPrice,
+          isFixed: defaultData.isFixed,
+        },
+      },
     });
-  };
-
-  const removeRow = async (rowIndex: number) => {
-    await client.api.contract.$delete({ json: { id: data[rowIndex].id } });
-    setData((old) => old.filter((_row, index) => index !== rowIndex));
+    await (await client.api.contract.all.$get({ query: { type: "customer" } }))
+      .json()
+      .then((newData) => {
+        setData(newData);
+      });
   };
 
   const table = useReactTable({
@@ -633,7 +508,7 @@ export default function Index() {
     meta: {
       updateData,
       addRow,
-      removeRow,
+      removeRow: () => {},
       removeSelectedRows: () => {},
     },
   });
@@ -655,6 +530,68 @@ export default function Index() {
     useSensor(TouchSensor, {}),
     useSensor(KeyboardSensor, {}),
   );
+
+  const createClaim = async (row: Row<ContractData>) => {
+    try {
+      const today = new Date();
+      const { overPrice, underPrice } = calcPrice({
+        workPrice: row.getValue("workPrice"),
+        from: row.getValue("paidFrom"),
+        to: row.getValue("paidTo"),
+        roundType: data[row.index].roundType as RoundType,
+        roundDigit: data[row.index].roundDigit,
+        calcType: row.getValue("calcType"),
+      });
+
+      const req = {
+        Company: row.getValue("company"),
+        Subject: row.getValue("subject"),
+        Period: calcPeriod(row.getValue("periodDate")),
+        ClaimFrom: datePipe(
+          new Date(today.getFullYear(), today.getMonth() - 1, 1),
+        ),
+        ClaimTo: datePipe(new Date(today.getFullYear(), today.getMonth(), 0)),
+        Worker: row.getValue("worker"),
+        PaidFrom: row.getValue("paidFrom"),
+        PaidTo: row.getValue("paidTo"),
+        Sales: row.getValue("sales"),
+        Initial: getValues("initial"),
+        Affiliate: "",
+        Note: "",
+        Note2: "",
+        WorkTime: 1.0,
+        OverTime: 0.0,
+        UnderTime: 0.0,
+        OtherPrice: 0,
+        WorkPrice: row.getValue("workPrice"),
+        OverPrice: overPrice,
+        UnderPrice: underPrice,
+        RoundType: data[row.index].roundType,
+        RoundDigit: data[row.index].roundDigit,
+      } as ClaimValues;
+
+      if (isHasUndefined(req)) {
+        const response = await client.api.claim.excel.$post({
+          json: {
+            ...req,
+            url: import.meta.env.VITE_API_URL,
+            isHour: row.getValue("isHour"),
+            isFixed: row.getValue("isFixed"),
+          },
+        });
+        await dlBlob({
+          response,
+          worker: row.getValue("worker") ?? "",
+          type: "claim",
+        });
+      } else {
+        alert("フォームを埋めてください");
+      }
+    } catch (error) {
+      console.error("Form submission error:", error);
+      alert("予期せぬエラーです");
+    }
+  };
 
   return (
     <DndContext
@@ -710,6 +647,24 @@ export default function Index() {
           headerList={translatedArray}
           columnOrder={columnOrder}
         />
+        <div className="flex justify-end gap-2">
+          <div className="flex flex-col gap-1">
+            作成者イニシャル
+            <Input register={register("initial")} placeholder="A" />
+          </div>
+          <button
+            onClick={async () => {
+              for (const row of table.getSelectedRowModel().rows) {
+                await new Promise((resolve) => setTimeout(resolve, 1000));
+                await createClaim(row);
+              }
+            }}
+            type="button"
+            className="rounded-sm bg-orange-400 p-2 font-bold"
+          >
+            一括で請求書を作成する
+          </button>
+        </div>
       </div>
     </DndContext>
   );
