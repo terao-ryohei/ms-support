@@ -38,7 +38,8 @@ bun install
 ```
 
 3. Set up environment variables:
-Create a `wrangler.toml` file in the root directory with the necessary configuration. For example:
+Create a `wrangler.toml` file in the root directory with the necessary configuration.
+For example:
 ```toml
 name = "ms-support"
 compatibility_date = "2024-10-03"
@@ -58,13 +59,20 @@ enabled = true
 NODE_ENV = "production"
 ```
 
+Create a `.env` and `.env.production` file in the root directory with the necessary configuration.
+For example:
+```env
+VITE_API_URL="http://localhost:5173"
+```
+
+
 4. Generate local DB
 ```bash
 bun run generate
 bun run local:migration
 ```
 
-4. Start the development server:
+5. Start the development server:
 ```bash
 bun run dev
 ```
