@@ -1,0 +1,23 @@
+name = "ms-support"
+compatibility_date = "2024-10-03"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "./build/client"
+
+# [[r2_buckets]]
+# binding = "MY_BUCKET"
+# bucket_name = "my-bucket"
+
+[[d1_databases]]
+binding = "DB"                                       # i.e. available in your Worker on env.DB
+database_name = "ms-support-db"
+database_id = "e19702a7-fd03-4d25-b979-b828f1aca10b"
+migrations_dir = "drizzle"
+
+# [ai]
+# binding = "AI"
+
+[observability]
+enabled = true
+
+[vars]
+NODE_ENV = "production"
