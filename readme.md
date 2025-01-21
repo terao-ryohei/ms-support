@@ -70,8 +70,8 @@ VITE_API_URL="http://localhost:5173"
 ```
 
 5. Add default Excel
-Create `claim.xlsx` and `order.xlsx` and `quote.xlsx` file in public directory.
-Then fix `server/api/{claim | order | quote}/excel.ts` to your Excel.
+Create `claim.xlsx` and `order.xlsx` and `quote.xlsx` file in the public directory.
+Fix `server/api/{claim | order | quote}/excel.ts` to your Excel.
 
 4. Generate local DB
 ```bash
