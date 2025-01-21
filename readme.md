@@ -69,22 +69,22 @@ For example:
 VITE_API_URL="http://localhost:5173"
 ```
 
-5. Add default Excel
+4. Add default Excel
 Create `claim.xlsx` and `order.xlsx` and `quote.xlsx` file in the public directory.
 Fix `server/api/{claim | order | quote}/excel.ts` to your Excel.
 
-4. Generate local DB
+5. Generate local DB
 ```bash
 bun run generate
 bun run local:migration
 ```
 
-5. Start the development server:
+6. Start the development server:
 ```bash
 bun run dev
 ```
 
-5. Access the application in your browser:
+7. Access the application in your browser:
 Navigate to `http://localhost:5173`.
 
 ## Deployment
