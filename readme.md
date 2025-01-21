@@ -46,6 +46,10 @@ compatibility_date = "2024-10-03"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = "./build/client"
 
+[[kv_namespaces]]
+binding = "RSA"
+id = YOUR_KV_ID
+
 [[d1_databases]]
 binding = "DB"                                       # i.e. available in your Worker on env.DB
 database_name = YOUR-DB-NAME

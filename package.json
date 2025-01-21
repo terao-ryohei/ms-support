@@ -32,6 +32,8 @@
     "@remix-run/react": "^2.15.2",
     "@tanstack/match-sorter-utils": "^8.19.4",
     "@tanstack/react-table": "^8.20.6",
+    "@types/bcryptjs": "^2.4.6",
+    "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.7.1",
     "date-fns": "^4.1.0",
     "drizzle-kit": "^0.30.2",

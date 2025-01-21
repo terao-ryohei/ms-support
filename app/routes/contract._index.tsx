@@ -74,7 +74,7 @@ const translatedArray = {
 const client = hc<AppType>(import.meta.env.VITE_API_URL);
 
 export const loader = async () => {
-  const contractData = await (await client.api.contract.quote.$get()).json();
+  const contractData = await (await client.api.contract.payment.$get()).json();
   const salesData = await (await client.api.sales.$get()).json();
   const companiesData = await (await client.api.companies.$get()).json();
   const workersData = await (await client.api.workers.$get()).json();
@@ -584,7 +584,7 @@ export default function Index() {
       })
     ).json();
 
-    await (await client.api.contract.quote.$get()).json().then((newData) => {
+    await (await client.api.contract.payment.$get()).json().then((newData) => {
       setData(
         newData.map((data) => ({
           ...data,

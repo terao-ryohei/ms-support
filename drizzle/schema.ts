@@ -56,12 +56,6 @@ export const payment = sqliteTable("payment", {
     .notNull(),
 });
 
-// // Affiliation テーブル
-// export const affiliations = sqliteTable("affiliations", {
-//   id: integer("id").primaryKey({ autoIncrement: true }).notNull(),
-//   name: text("name").notNull(),
-// });
-
 // workersRelation 中間テーブル
 export const workersRelation = sqliteTable("workers_relation", {
   id: integer("id").primaryKey({ autoIncrement: true }).notNull(),
@@ -77,26 +71,19 @@ export const workersRelation = sqliteTable("workers_relation", {
   type: text("type").notNull(),
 });
 
-// // WorkersAffiliations 中間テーブル
-// export const workersAffiliations = sqliteTable("workers_affiliations", {
-//   id: integer("id").primaryKey({ autoIncrement: true }).notNull(),
-//   workersId: integer("workers_id")
-//     .references(() => workers.id)
-//     .notNull(), // Sales の参照
-//   affiliationId: integer("affiliation_id")
-//     .references(() => affiliations.id)
-//     .notNull(), // Workers の参照
-// });
+// Userテーブル
+export const user = sqliteTable("user", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  salt: text("salt").notNull(),
+});
 
-// // Price テーブル
-// export const price = sqliteTable("price", {
-//   id: integer("id").primaryKey({ autoIncrement: true }).notNull(),
-//   workerId: integer("worker_id")
-//     .references(() => workers.id)
-//     .notNull(), // Workers の参照
-//   paidTo: integer("paidTo").notNull(),
-//   paidFrom: integer("paidFrom").notNull(),
-//   price: integer("price").notNull(),
-//   overPrice: integer("overPrice").notNull(),
-//   underPrice: integer("underPrice").notNull(),
-// });
+// Passテーブル
+export const pass = sqliteTable("pass", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id")
+    .references(() => user.id)
+    .notNull(),
+  pass: text("pass").notNull(),
+  pepper: text("pepper").notNull(),
+});

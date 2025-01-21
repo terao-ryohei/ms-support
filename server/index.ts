@@ -5,32 +5,22 @@ import type { D1Database } from "@cloudflare/workers-types";
 import { drizzle } from "drizzle-orm/d1";
 import { poweredBy } from "hono/powered-by";
 import { createClaim } from "server/api/claim/excel";
-import {
-  postCompany,
-  postContract,
-  postSales,
-  postWorker,
-  putContract,
-  putPayment,
-  putWorkersRelation,
-} from "server/api/createData";
 import { insertSampleData } from "server/api/createSampleData";
 import {
+  deleteContract,
   getAllContract,
-  getCompany,
   getContract,
-  getQuoteContract,
-  getSales,
-  getWorker,
-} from "./api/getData";
+  getContractAndPayment,
+  postContract,
+  putContract,
+} from "./api/contract";
 import { createOrder } from "./api/order/excel";
 import { createQuote } from "./api/quote/excel";
-import {
-  deleteCompany,
-  deleteContract,
-  deleteSales,
-  deleteWorker,
-} from "./api/deleteData";
+import { getCompany, postCompany, deleteCompany } from "./api/companies";
+import { putPayment } from "./api/payment";
+import { getSales, postSales, deleteSales } from "./api/sales";
+import { getWorker, postWorker, deleteWorker } from "./api/worker";
+import { putWorkersRelation } from "./api/workersRelation";
 
 export const dbClient = (db: D1Database | undefined) => {
   if (!db) {
@@ -50,7 +40,7 @@ const app = new Hono<{ Bindings: Env }>()
   .get("api/workers", ...getWorker)
   .get("api/contract", ...getContract)
   .get("api/contract/all", ...getAllContract)
-  .get("api/contract/quote", ...getQuoteContract)
+  .get("api/contract/payment", ...getContractAndPayment)
   .post("api/sales", ...postSales)
   .post("api/companies", ...postCompany)
   .post("api/workers", ...postWorker)

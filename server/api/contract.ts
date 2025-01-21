@@ -16,46 +16,126 @@ import { calcPeriod } from "~/utils/calcPeriod";
 
 const factory = createFactory<Env>();
 
-export const getSales = factory.createHandlers(async (c) => {
-  const db = dbClient(c.env.DB);
+export const postContract = factory.createHandlers(
+  zValidator(
+    "json",
+    z.object({
+      contract: z.object({
+        worker: z.string(),
+        company: z.string(),
+        sales: z.string(),
+        from: z.string(),
+        to: z.string(),
+        contractType: z.string(),
+        subject: z.string(),
+        document: z.string(),
+      }),
+      payment: z.object({
+        paidFrom: z.number(),
+        paidTo: z.number(),
+        isHour: z.boolean(),
+        periodDate: z.string(),
+        workPrice: z.number(),
+        roundDigit: z.number(),
+        roundType: z.string(),
+        calcType: z.string(),
+        overPrice: z.number(),
+        underPrice: z.number(),
+        isFixed: z.boolean(),
+      }),
+    }),
+  ),
+  async (c) => {
+    const { contract: contractData, payment: paymentData } =
+      c.req.valid("json");
 
-  // 1. セールスデータを取得
-  const salesData = await db
-    .select()
-    .from(sales)
-    .where(eq(sales.isDisable, false))
-    .orderBy(sales.name)
-    .all();
+    const contractReq = {
+      ...contractData,
+      from: new Date(contractData.from),
+      to: new Date(contractData.to),
+      isDisable: false,
+    };
 
-  // 3. 結果を返却
-  return c.json(salesData);
-});
+    const newContract = await dbClient(c.env.DB)
+      .insert(contract)
+      .values([{ ...contractReq }])
+      .returning();
 
-export const getCompany = factory.createHandlers(async (c) => {
-  const companyData = await dbClient(c.env.DB)
-    .select({
-      id: companies.id,
-      name: companies.name,
-    })
-    .from(companies)
-    .where(eq(companies.isDisable, false))
-    .orderBy(companies.name); // 並び替え
+    const paymentReq = {
+      ...paymentData,
+      isDisable: false,
+    };
 
-  return c.json(companyData);
-});
+    const newPayment = await dbClient(c.env.DB)
+      .insert(payment)
+      .values([{ ...paymentReq }])
+      .returning();
+    const newPayment2 = await dbClient(c.env.DB)
+      .insert(payment)
+      .values([{ ...paymentReq }])
+      .returning();
 
-export const getWorker = factory.createHandlers(async (c) => {
-  const workerData = await dbClient(c.env.DB)
-    .select({
-      id: workers.id,
-      name: workers.name,
-    })
-    .from(workers)
-    .where(eq(workers.isDisable, false))
-    .orderBy(workers.name); // 並び替え
+    await dbClient(c.env.DB)
+      .insert(workersRelation)
+      .values([
+        {
+          contractId: newContract[0].id,
+          paymentId: newPayment[0].id,
+          workerId: 1,
+          salesId: 1,
+          companyId: 1,
+          type: "customer",
+        },
+      ]);
+    await dbClient(c.env.DB)
+      .insert(workersRelation)
+      .values([
+        {
+          contractId: newContract[0].id,
+          paymentId: newPayment2[0].id,
+          workerId: 1,
+          salesId: 1,
+          companyId: 1,
+          type: "partner",
+        },
+      ]);
 
-  return c.json(workerData);
-});
+    return c.json({ id: newContract[0].id, paymentId: newPayment[0].id });
+  },
+);
+
+export const putContract = factory.createHandlers(
+  zValidator(
+    "json",
+    z.object({
+      values: z.object({
+        from: z.string().optional(),
+        to: z.string().optional(),
+        contractType: z.string().optional(),
+        subject: z.string().optional(),
+        document: z.string().optional(),
+      }),
+      id: z.number(),
+    }),
+  ),
+  async (c) => {
+    const { values, id } = c.req.valid("json");
+
+    const req = {
+      ...values,
+      from: values.from ? new Date(values.from) : undefined,
+      to: values.to ? new Date(values.to) : undefined,
+      isDisable: false,
+    };
+
+    await dbClient(c.env.DB)
+      .update(contract)
+      .set({ ...req })
+      .where(eq(contract.id, id));
+
+    return c.json({ result: "success" });
+  },
+);
 
 export const getContract = factory.createHandlers(
   zValidator(
@@ -217,7 +297,7 @@ export const getAllContract = factory.createHandlers(
   },
 );
 
-export const getQuoteContract = factory.createHandlers(async (c) => {
+export const getContractAndPayment = factory.createHandlers(async (c) => {
   const contractData = await dbClient(c.env.DB)
     .select({
       id: contract.id,
@@ -389,3 +469,22 @@ export const getQuoteContract = factory.createHandlers(async (c) => {
 
   return c.json(res);
 });
+
+export const deleteContract = factory.createHandlers(
+  zValidator(
+    "json",
+    z.object({
+      id: z.number(),
+    }),
+  ),
+  async (c) => {
+    const { id } = c.req.valid("json");
+
+    const res = await dbClient(c.env.DB)
+      .update(contract)
+      .set({ isDisable: true })
+      .where(eq(contract.id, id));
+
+    return c.json(res);
+  },
+);
