@@ -1,13 +1,8 @@
 node_modules
 
-test-results
-
 /.cache
 /build
 .env
-.dev.vars
 
 .wrangler
-
-.react-router/
-
+wrangler.toml

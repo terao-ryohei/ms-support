@@ -4,8 +4,8 @@
   "sideEffects": false,
   "type": "module",
   "scripts": {
-    "build": "bun run typecheck && remix vite:build",
-    "deploy": "bun run build && wrangler pages deploy",
+    "build": "remix vite:build",
+    "deploy": "bun run build && bun run typecheck && wrangler pages deploy",
     "dev": "remix vite:dev",
     "start": "wrangler dev",
     "typecheck": "tsc",
