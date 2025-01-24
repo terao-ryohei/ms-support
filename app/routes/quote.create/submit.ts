@@ -6,9 +6,9 @@ import { isHasUndefined } from "~/utils/typeGuard";
 
 const client = hc<AppType>(import.meta.env.VITE_API_URL);
 
-export const submit = async (
-  value: QuoteValues,
-  {
+export const submit = async ({
+  value,
+  data: {
     id,
     paymentId,
     sales = "",
@@ -18,7 +18,10 @@ export const submit = async (
     underPrice,
     isFixed,
     isHour,
-  }: {
+  },
+}: {
+  value: QuoteValues;
+  data: {
     id: number;
     paymentId: number;
     sales: string | null;
@@ -28,69 +31,65 @@ export const submit = async (
     underPrice: number;
     isHour: boolean;
     isFixed: boolean;
-  },
-) => {
+  };
+}) => {
+  // APIリクエストなどの処理をここに記述
+  const formData = {
+    ...value,
+    overPrice,
+    underPrice,
+    Sales: sales ?? "",
+    Company: company ?? "",
+    Worker: worker ?? "",
+  } as QuoteValues;
+
   try {
-    // APIリクエストなどの処理をここに記述
-    if (value) {
-      const formData = {
-        ...value,
-        overPrice,
-        underPrice,
-        Sales: sales ?? "",
-        Company: company ?? "",
-        Worker: worker ?? "",
-      } as QuoteValues;
-
-      if (isHasUndefined(formData)) {
-        await client.api.contract.$put({
-          json: {
-            id,
-            values: {
-              from: value.ContractFrom,
-              to: value.ContractTo,
-              subject: value.Subject,
-              document: value.Document,
-              contractType: value.ContractType,
-            },
+    if (isHasUndefined(formData)) {
+      await client.api.contract.$put({
+        json: {
+          id,
+          values: {
+            from: value.ContractFrom,
+            to: value.ContractTo,
+            subject: value.Subject,
+            document: value.Document,
+            contractType: value.ContractType,
           },
-        });
-        await client.api.payment.$put({
-          json: {
-            id: paymentId,
-            values: {
-              workPrice: value.WorkPrice,
-              paidFrom: value.PaidFrom,
-              paidTo: value.PaidTo,
-              roundType: value.RoundType,
-              roundDigit: value.RoundDigit,
-              periodDate: value.Period,
-            },
+        },
+      });
+      await client.api.payment.$put({
+        json: {
+          id: paymentId,
+          values: {
+            workPrice: value.WorkPrice,
+            paidFrom: value.PaidFrom,
+            paidTo: value.PaidTo,
+            roundType: value.RoundType,
+            roundDigit: value.RoundDigit,
+            periodDate: value.Period,
           },
-        });
+        },
+      });
 
-        const from = new Date(value.ContractFrom);
-        const to = new Date(value.ContractTo);
+      const from = new Date(value.ContractFrom);
+      const to = new Date(value.ContractTo);
 
-        const response = await client.api.quote.excel.$post({
-          json: {
-            ...formData,
-            url: import.meta.env.VITE_API_URL,
-            isHour: isHour,
-            isFixed: isFixed,
-            ContractRange:
-              Number(`${to.getFullYear()}${to.getMonth()}`) -
-              Number(`${from.getFullYear()}${from.getMonth()}`),
-          },
-        });
-        await dlBlob({
-          response,
-          worker: worker ?? "",
-          type: "quote",
-        });
-      } else {
-        alert("フォームを埋めてください");
-      }
+      const response = await client.api.quote.excel.$post({
+        json: {
+          ...formData,
+          url: import.meta.env.VITE_API_URL,
+          isHour: isHour,
+          isFixed: isFixed,
+          ContractRange:
+            Number(`${to.getFullYear()}${to.getMonth()}`) -
+            Number(`${from.getFullYear()}${from.getMonth()}`),
+        },
+      });
+      await dlBlob({
+        response,
+        worker: worker ?? "",
+        type: "quote",
+      });
     } else {
       alert("フォームを埋めてください");
     }

@@ -2,7 +2,7 @@ import { z } from "@hono/zod-openapi";
 import { zValidator } from "@hono/zod-validator";
 import Excel from "exceljs";
 import { createFactory } from "hono/factory";
-import type { CalcType } from "~/utils/calcPrice";
+import type { CalcType } from "~/types/calcType";
 import { calcComma } from "~/utils/price";
 import { datePipe } from "../../../app/utils/datePipe";
 

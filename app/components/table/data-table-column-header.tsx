@@ -4,7 +4,7 @@ import type { Header } from "@tanstack/react-table";
 import type { CSSProperties } from "react";
 import { TableHead } from "./table";
 
-export const DraggableTableHeader = <TData,>({
+export function DraggableTableHeader<TData>({
   header,
   className,
   data,
@@ -12,7 +12,7 @@ export const DraggableTableHeader = <TData,>({
   header: Header<TData, unknown>;
   className: string;
   data: string;
-}) => {
+}) {
   const { column } = header;
 
   const { attributes, isDragging, listeners, setNodeRef, transform } =
@@ -32,7 +32,7 @@ export const DraggableTableHeader = <TData,>({
       colSpan={header.colSpan}
       ref={setNodeRef}
       style={style}
-      className={`relative whitespace-nowrap bg-slate-200 text-center [transition:width_transform_0.2s_ease-in-out] ${className}`}
+      className={`relative whitespace-nowrap text-center [transition:width_transform_0.2s_ease-in-out] ${className}`}
     >
       <span className="relative">
         {header.id !== "select-col" && (
@@ -86,4 +86,4 @@ export const DraggableTableHeader = <TData,>({
         )}
     </TableHead>
   );
-};
+}

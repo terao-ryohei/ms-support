@@ -1,6 +1,6 @@
 import type { CellContext } from "@tanstack/react-table";
 
-export const RemoveRowCell = <T,>({ row, table }: CellContext<T, string>) => {
+export function RemoveRowCell<T>({ row, table }: CellContext<T, string>) {
   return (
     <div className="flex items-center space-x-2">
       <button
@@ -12,4 +12,4 @@ export const RemoveRowCell = <T,>({ row, table }: CellContext<T, string>) => {
       </button>
     </div>
   );
-};
+}

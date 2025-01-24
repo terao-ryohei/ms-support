@@ -43,7 +43,7 @@ import { EditableList } from "~/components/table/editable-list";
 import { EditableTable } from "~/components/table/editable-table";
 import { useToast } from "~/components/toast/toastProvider";
 import { datePipe } from "~/utils/datePipe";
-import { defaultData } from "~/utils/default";
+import { defaultData } from "~/constants/default";
 import { calcComma } from "~/utils/price";
 
 const translatedArray = {
@@ -699,7 +699,7 @@ export default function Index() {
           <button
             onClick={table.options.meta?.addRow}
             type="button"
-            className="rounded-sm bg-teal-500 p-2 font-bold text-white"
+            className="rounded-sm bg-secondary p-2 font-bold text-white"
           >
             新しい行を追加する
           </button>

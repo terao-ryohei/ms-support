@@ -1,328 +1,281 @@
-import { useLoaderData } from "@remix-run/react";
-import { useEffect, useState } from "react";
-import { useWatch } from "react-hook-form";
-import { useRemixForm } from "remix-hook-form";
-import type { ClaimValues, RoundType } from "server/api/claim/excel";
 import { Input } from "~/components/input/input";
+import { InputWrapper } from "~/components/input/inputWrapper";
 import { Select } from "~/components/input/select";
-import { calcPeriod } from "~/utils/calcPeriod";
-import { type CalcType, calcPrice } from "~/utils/calcPrice";
-import { datePipe } from "~/utils/datePipe";
-import { calcComma } from "~/utils/price";
-import { defaultValue } from "./defaultValue";
+import { LeftData } from "~/layouts/leftData";
 import { contractLoader } from "./loader";
-import { submit } from "./submit";
+import { useHook } from "./useHook";
 
 export const loader = contractLoader;
 
 export default function Index() {
-  const today = new Date();
-  const { contractData } = useLoaderData<typeof loader>();
-
-  const [total, setTotal] = useState("0");
-
-  const { getValues, register, control, setValue } = useRemixForm<ClaimValues>({
-    defaultValues: {
-      ...defaultValue,
-      Initial: "",
-      Period: calcPeriod(contractData.periodDate),
-      ClaimFrom: datePipe(
-        new Date(today.getFullYear(), today.getMonth() - 1, 1),
-      ),
-      ClaimTo: datePipe(new Date(today.getFullYear(), today.getMonth(), 0)),
-      PaidFrom: contractData.paidFrom,
-      PaidTo: contractData.paidTo,
-      OtherPrice: 0,
-      WorkTime: 1.0,
-      OverTime: 0.0,
-      UnderTime: 0.0,
-      OverPrice: contractData.overPrice,
-      UnderPrice: contractData.underPrice,
-      WorkPrice: contractData.workPrice,
-      RoundType: contractData.roundType as RoundType,
-      CalcType: contractData.calcType as CalcType,
-      RoundDigit: contractData.roundDigit,
-      Subject: contractData.subject,
-    },
-  });
-
   const {
-    WorkPrice = 0,
-    WorkTime = 0,
-    OtherPrice = 0,
-    UnderTime = 0,
-    OverTime = 0,
-    PaidFrom = 0,
-    PaidTo = 0,
-    OverPrice = 0,
-    UnderPrice = 0,
-    RoundType: RoundTypeValue = "round",
-    RoundDigit = 1,
-    CalcType = "highLow",
-  } = useWatch({ control });
-
-  useEffect(() => {
-    const { overPrice, underPrice } = calcPrice({
-      workPrice: WorkPrice,
-      from: PaidFrom,
-      to: PaidTo,
-      roundType: RoundTypeValue,
-      roundDigit: RoundDigit,
-      calcType: CalcType,
-    });
-
-    setValue("OverPrice", overPrice);
-    setValue("UnderPrice", underPrice);
-
-    setTotal(
-      calcComma(
-        WorkPrice * WorkTime +
-          (contractData.isHour ? 0 : overPrice * OverTime) -
-          (contractData.isHour ? 0 : underPrice * UnderTime) +
-          OtherPrice,
-      ),
-    );
-  }, [
-    RoundTypeValue,
+    contractData,
+    OverPrice,
+    UnderPrice,
     WorkPrice,
-    WorkTime,
-    OtherPrice,
-    UnderTime,
-    OverTime,
     PaidFrom,
     PaidTo,
-    RoundDigit,
-    contractData,
-    CalcType,
-    setValue,
-  ]);
+    CalcTypeValue,
+    register,
+    onSubmit,
+  } = useHook();
 
-  return (
-    <div className="container mx-auto px-4">
-      <h1 className="mb-5 text-left font-bold text-3xl">請求書作成装置</h1>
-      <div className="flex gap-2">
-        <div className="form-wrap mx-12 flex flex-1 flex-col rounded-lg bg-gray-800 p-5 text-white">
-          {contractData.isHour && (
-            <h2 className="mb-4 ml-2 font-bold text-3xl underline underline-offset-4">
-              時間清算
-            </h2>
-          )}
-          {contractData.isFixed && (
-            <h2 className="mb-4 ml-2 font-bold text-3xl underline underline-offset-4">
-              固定清算
-            </h2>
-          )}
-          <span className="mt-2 mb-2 font-bold text-sm">顧客担当</span>
-          <h2 className="mb-2 ml-2 font-bold text-xl underline underline-offset-4">
-            {contractData.sales}
-          </h2>
-          <span className="mt-2 mb-2 font-bold text-sm">顧客</span>
-          <h2 className="mb-2 ml-2 font-bold text-xl underline underline-offset-4">
-            {contractData.company}
-          </h2>
-          <span className="mt-2 mb-2 font-bold text-sm">作業者名</span>
-          <h2 className="mb-2 ml-2 font-bold text-xl underline underline-offset-4">
-            {contractData.worker}
-          </h2>
-          {!contractData.isHour && (
-            <div className="mt-auto">
-              {CalcType === "center" || CalcType === "fixed" ? (
-                <>
-                  <div className="total font-bold text-lg">超過控除単価:</div>
-                  {CalcType === "center" && (
-                    <div className="price text-right font-extrabold font-num text-2xl">
-                      {`${calcComma(WorkPrice)} ÷ ${(PaidTo + PaidFrom) / 2}h = ${(WorkPrice / ((PaidTo + PaidFrom) / 2)).toFixed(1)}`}
-                      <br />
-                      {`≒ ${calcComma(OverPrice)}`}
-                    </div>
-                  )}
-                  {CalcType === "fixed" && (
-                    <div className="price text-right font-extrabold font-num text-2xl">
-                      {`${calcComma(WorkPrice)} ÷ 160h = ${(WorkPrice / 160).toFixed(1)}`}
-                      <br />
-                      {`≒ ${calcComma(OverPrice)}`}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <>
-                  <div className="total font-bold text-lg">超過単価:</div>
-                  <div className="price text-right font-extrabold font-num text-2xl">
-                    {`${calcComma(WorkPrice)} ÷ ${PaidTo}h = ${(WorkPrice / PaidTo).toFixed(1)}`}
-                    <br />
-                    {`≒ ${calcComma(OverPrice)}`}
-                  </div>
-                  <div className="total font-bold text-lg">控除単価:</div>
-                  <div className="price text-right font-extrabold font-num text-2xl">
-                    {`${calcComma(WorkPrice)} ÷ ${PaidFrom}h = ${(WorkPrice / PaidFrom).toFixed(1)}`}
-                    <br />
-                    {`≒ ${calcComma(UnderPrice)}`}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-          <div className="mt-10">
-            <div className="total font-bold text-lg">合計額:</div>
-            <div className="price text-right font-extrabold font-num text-2xl">
-              {total}
-            </div>
-          </div>
-        </div>
-        <div className="form-wrap flex flex-1 flex-col rounded-lg bg-gray-100 p-5">
-          <span className="mt-2 mb-2 font-bold text-sm">
-            請求書作成者イニシャル
-          </span>
+  const RightSide = () => (
+    <div className="form-wrap flex flex-1 flex-col rounded-lg bg-gray-100 p-5">
+      <InputWrapper
+        input={
           <Input
             register={register("Initial")}
-            inputMode="url"
-            placeholder="A"
+            props={{
+              placeholder: "A",
+              inputMode: "url",
+            }}
           />
-          <span className="mt-2 mb-2 font-bold text-sm">件名</span>
-          <Input register={register("Subject")} placeholder="開発業務" />
-          <span className="mt-2 mb-2 font-bold text-sm">支払期日</span>
-          <Input register={register("Period")} type="date" />
-          <span className="mt-2 mb-2 font-bold text-sm">請求期間</span>
+        }
+      >
+        請求書作成者イニシャル
+      </InputWrapper>
+      <InputWrapper
+        input={
+          <Input
+            register={register("Initial")}
+            props={{
+              placeholder: "開発業務",
+            }}
+          />
+        }
+      >
+        件名
+      </InputWrapper>
+      <InputWrapper
+        input={
+          <Input
+            register={register("Period")}
+            props={{
+              type: "date",
+            }}
+          />
+        }
+      >
+        支払期日
+      </InputWrapper>
+      <InputWrapper
+        input={
           <div className="range mb-2 flex items-center gap-2">
-            <Input register={register("ClaimFrom")} type="date" />
+            <Input register={register("ClaimFrom")} props={{ type: "date" }} />
             ~
-            <Input register={register("ClaimTo")} type="date" />
+            <Input register={register("ClaimTo")} props={{ type: "date" }} />
           </div>
-          <span className="mt-2 mb-2 font-bold text-sm">清算幅(h)</span>
+        }
+      >
+        請求期間
+      </InputWrapper>
+      <InputWrapper
+        input={
           <div className="range mb-5 flex items-center gap-2">
             <Input
               register={register("PaidFrom", { valueAsNumber: true })}
-              type="number"
-              inputMode="numeric"
-              placeholder="140"
-              disable={contractData.isHour || contractData.isFixed}
+              props={{
+                type: "number",
+                inputMode: "numeric",
+                placeholder: "140",
+                disabled: contractData.isHour || contractData.isFixed,
+              }}
             />
             ~
             <Input
               register={register("PaidTo", { valueAsNumber: true })}
-              type="number"
-              inputMode="numeric"
-              placeholder="180"
-              disable={contractData.isHour || contractData.isFixed}
+              props={{
+                type: "number",
+                inputMode: "numeric",
+                placeholder: "180",
+                disabled: contractData.isHour || contractData.isFixed,
+              }}
             />
           </div>
-          <div className="mb-5 grid grid-cols-3 gap-5">
-            <div className="flex flex-col">
-              <span className="mb-2 font-bold text-sm">入単価</span>
-              <Input
-                register={register("WorkPrice", { valueAsNumber: true })}
-                type="number"
-                inputMode="numeric"
-                placeholder="60"
-              />
-            </div>
-            <div className="flex flex-col">
-              <span className="mb-2 font-bold text-sm">端数処理</span>
-              <Select
-                register={register("RoundType")}
-                data={[
-                  { id: "round", value: "round", view: "四捨五入" },
-                  { id: "floor", value: "floor", view: "切り捨て" },
-                  { id: "ceil", value: "ceil", view: "切り上げ" },
-                ]}
-                disable={contractData.isFixed}
-              />
-            </div>
-            <div className="flex flex-col">
-              <span className="mb-2 font-bold text-sm">端数処理桁数</span>
-              <Input
-                register={register("RoundDigit", { valueAsNumber: true })}
-                type="number"
-                inputMode="numeric"
-                placeholder="1"
-                disable={contractData.isFixed}
-              />
-            </div>
-          </div>
-          <div className="mb-5 grid grid-cols-3 gap-5">
-            <div className="flex flex-col">
-              <span className="mb-2 font-bold text-sm">超過控除の計算</span>
-              <Select
-                register={register("CalcType")}
-                data={[
-                  { id: "highLow", value: "highLow", view: "上下割" },
-                  { id: "center", value: "center", view: "中央割" },
-                  { id: "other", value: "other", view: "その他" },
-                ]}
-                disable={contractData.isFixed}
-              />
-            </div>
-            <div className="flex flex-col">
-              <span className="mb-2 font-bold text-sm">超過単価</span>
-              <Input
-                register={register("OverPrice")}
-                type="number"
-                inputMode="numeric"
-              />
-            </div>
-            <div className="flex flex-col">
-              <span className="mb-2 font-bold text-sm">控除単価</span>
-              <Input
-                register={register("UnderPrice")}
-                type="number"
-                inputMode="numeric"
-              />
-            </div>
-          </div>
-          <div className="mb-5 grid grid-cols-3 gap-5">
-            <div className="flex flex-col">
-              <span className="mb-2 font-bold text-sm">
-                {contractData.isHour ? "作業人時" : "作業人月"}
-              </span>
-              <Input
-                register={register("WorkTime", { valueAsNumber: true })}
-                type="number"
-                inputMode="numeric"
-                placeholder="1.0"
-              />
-            </div>
-            <div className="flex flex-col">
-              <span className="mb-2 font-bold text-sm">超過工数(h)</span>
-              <Input
-                register={register("OverTime", { valueAsNumber: true })}
-                type="number"
-                inputMode="numeric"
-                placeholder="0.0"
-                disable={contractData.isFixed}
-              />
-            </div>
-            <div className="flex flex-col">
-              <span className="mb-2 font-bold text-sm">控除工数(h)</span>
-              <Input
-                register={register("UnderTime", { valueAsNumber: true })}
-                type="number"
-                inputMode="numeric"
-                placeholder="0.0"
-                disable={contractData.isFixed}
-              />
-            </div>
-          </div>
-          <span className="mt-2 mb-2 font-bold text-sm">その他費用</span>
+        }
+      >
+        清算幅(h)
+      </InputWrapper>
+
+      <div className="mb-5 grid grid-cols-3 gap-5">
+        <InputWrapper
+          input={
+            <Input
+              register={register("WorkPrice")}
+              props={{
+                type: "number",
+                inputMode: "numeric",
+                placeholder: "60",
+              }}
+            />
+          }
+        >
+          入単価
+        </InputWrapper>
+        <InputWrapper
+          input={
+            <Select
+              register={register("RoundType")}
+              data={[
+                { id: "round", value: "round", view: "四捨五入" },
+                { id: "floor", value: "floor", view: "切り捨て" },
+                { id: "ceil", value: "ceil", view: "切り上げ" },
+              ]}
+              props={{ disabled: contractData.isFixed }}
+            />
+          }
+        >
+          端数処理
+        </InputWrapper>
+        <InputWrapper
+          input={
+            <Input
+              register={register("RoundDigit", { valueAsNumber: true })}
+              props={{
+                type: "number",
+                inputMode: "numeric",
+                placeholder: "1",
+                disabled: contractData.isFixed,
+              }}
+            />
+          }
+        >
+          端数処理桁数
+        </InputWrapper>
+      </div>
+      <div className="mb-5 grid grid-cols-3 gap-5">
+        <InputWrapper
+          input={
+            <Select
+              register={register("CalcType")}
+              data={[
+                { id: "highLow", value: "highLow", view: "上下割" },
+                { id: "center", value: "center", view: "中央割" },
+                { id: "other", value: "other", view: "その他" },
+              ]}
+              props={{ disabled: contractData.isFixed }}
+            />
+          }
+        >
+          超過控除の計算
+        </InputWrapper>
+        <InputWrapper
+          input={
+            <Input
+              register={register("OverPrice")}
+              props={{
+                type: "number",
+                inputMode: "numeric",
+              }}
+            />
+          }
+        >
+          超過単価
+        </InputWrapper>
+        <InputWrapper
+          input={
+            <Input
+              register={register("UnderPrice")}
+              props={{
+                type: "number",
+                inputMode: "numeric",
+              }}
+            />
+          }
+        >
+          控除単価
+        </InputWrapper>
+      </div>
+      <div className="mb-5 grid grid-cols-3 gap-5">
+        <InputWrapper
+          input={
+            <Input
+              register={register("WorkTime", { valueAsNumber: true })}
+              props={{
+                type: "number",
+                inputMode: "numeric",
+                placeholder: "1.0",
+              }}
+            />
+          }
+        >
+          {contractData.isHour ? "作業人時" : "作業人月"}
+        </InputWrapper>
+        <InputWrapper
+          input={
+            <Input
+              register={register("OverTime", { valueAsNumber: true })}
+              props={{
+                type: "number",
+                inputMode: "numeric",
+                placeholder: "0.0",
+                disabled: contractData.isFixed,
+              }}
+            />
+          }
+        >
+          超過工数(h)
+        </InputWrapper>
+        <InputWrapper
+          input={
+            <Input
+              register={register("UnderTime", { valueAsNumber: true })}
+              props={{
+                type: "number",
+                inputMode: "numeric",
+                placeholder: "0.0",
+                disabled: contractData.isFixed,
+              }}
+            />
+          }
+        >
+          控除工数(h)
+        </InputWrapper>
+      </div>
+      <InputWrapper
+        input={
           <Input
             register={register("OtherPrice", { valueAsNumber: true })}
-            type="number"
-            inputMode="numeric"
-            placeholder="0"
-          />
-          <button
-            type="button"
-            className="mt-5 h-14 rounded-md bg-teal-500 px-4 py-2 font-bold text-white shadow-md hover:bg-teal-600"
-            onClick={() => {
-              submit(getValues(), {
-                ...contractData,
-                overPrice: OverPrice,
-                underPrice: UnderPrice,
-              });
+            props={{
+              type: "number",
+              inputMode: "numeric",
+              placeholder: "0",
+              disabled: contractData.isFixed,
             }}
-          >
-            Excelを出力する
-          </button>
-        </div>
+          />
+        }
+      >
+        その他費用
+      </InputWrapper>
+      <button
+        type="button"
+        className="mt-5 h-14 rounded-md bg-secondary px-4 py-2 font-bold text-white shadow-md hover:bg-secondary-hover"
+        onClick={onSubmit}
+      >
+        Excelを出力する
+      </button>
+    </div>
+  );
+
+  return (
+    <div className="mx-auto px-4">
+      <h1 className="mb-5 text-left font-bold text-3xl">請求書作成装置</h1>
+      <div className="flex gap-2">
+        <LeftData
+          isFixed={contractData.isFixed}
+          isHour={contractData.isHour}
+          sales={contractData.sales ?? ""}
+          company={contractData.company ?? ""}
+          worker={contractData.worker ?? ""}
+          overPrice={OverPrice}
+          underPrice={UnderPrice}
+          workPrice={WorkPrice}
+          paidFrom={PaidFrom}
+          paidTo={PaidTo}
+          calcType={CalcTypeValue}
+        />
+        <RightSide />
       </div>
     </div>
   );

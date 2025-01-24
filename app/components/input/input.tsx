@@ -1,32 +1,33 @@
-import type { HTMLInputTypeAttribute } from "react";
+import type { DetailedHTMLProps, InputHTMLAttributes } from "react";
+import { cn } from "~/utils/cn";
 
-export const Input = <RegisterType,>({
+export function Input<RegisterType>({
   register,
-  type = "text",
-  inputMode,
-  placeholder,
-  disable = false,
+  props,
+  classname,
 }: {
   register: RegisterType;
-  type?: HTMLInputTypeAttribute;
-  inputMode?:
-    | "email"
-    | "search"
-    | "tel"
-    | "text"
-    | "url"
-    | "none"
-    | "numeric"
-    | "decimal";
-  placeholder?: string;
-  disable?: boolean;
-}) => (
-  <input
-    {...register}
-    className={`w-full rounded-md border border-gray-300 p-2 text-sm ${(inputMode === "email" || inputMode === "tel" || inputMode === "numeric" || inputMode === "decimal" || type === "date" || type === "number") && "text-right"}`}
-    type={type}
-    inputMode={inputMode}
-    placeholder={placeholder}
-    disabled={disable}
-  />
-);
+  props: DetailedHTMLProps<
+    InputHTMLAttributes<HTMLInputElement>,
+    HTMLInputElement
+  >;
+  classname?: string;
+}) {
+  return (
+    <input
+      {...register}
+      {...props}
+      className={cn(
+        "w-full rounded-md border border-gray-300 p-2 text-sm",
+        (props.inputMode === "email" ||
+          props.inputMode === "tel" ||
+          props.inputMode === "numeric" ||
+          props.inputMode === "decimal" ||
+          props.type === "date" ||
+          props.type === "number") &&
+          "text-right",
+        classname,
+      )}
+    />
+  );
+}

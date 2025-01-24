@@ -20,21 +20,21 @@ export const Layout = ({ children }: { children: ReactNode }) => {
 
   return (
     <div className="flex h-[100vh] flex-col">
-      <header className="fixed flex w-full bg-teal-600 p-4">
+      <header className="fixed flex w-full bg-secondary-hover p-4">
         <ul className="flex gap-4 font-bold text-white">
-          <li className={pathname === "/" ? "text-orange-400" : ""}>
+          <li className={pathname === "/" ? "text-accent" : ""}>
             <NavItem href="/" label="Home" />
           </li>
-          <li className={pathname === "/contract" ? "text-orange-400" : ""}>
+          <li className={pathname === "/contract" ? "text-accent" : ""}>
             <NavItem href="/contract" label="契約者一覧" />
           </li>
-          <li className={pathname === "/quote/data" ? "text-orange-400" : ""}>
+          <li className={pathname === "/quote/data" ? "text-accent" : ""}>
             <NavItem href="/quote/data" label="見積書作成装置" />
           </li>
-          <li className={pathname === "/claim/data" ? "text-orange-400" : ""}>
+          <li className={pathname === "/claim/data" ? "text-accent" : ""}>
             <NavItem href="/claim/data" label="請求書作成装置" />
           </li>
-          <li className={pathname === "/order/data" ? "text-orange-400" : ""}>
+          <li className={pathname === "/order/data" ? "text-accent" : ""}>
             <NavItem href="/order/data" label="注文書作成装置" />
           </li>
         </ul>
@@ -44,7 +44,6 @@ export const Layout = ({ children }: { children: ReactNode }) => {
           <section className="h-full">{children}</section>
         </main>
       </ToastProvider>
-      <footer className="m-4 text-right">Made by Creative Design Dept.</footer>
     </div>
   );
 };

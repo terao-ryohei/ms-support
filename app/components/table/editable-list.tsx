@@ -15,7 +15,7 @@ import {
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon, X } from "lucide-react";
 import { useState } from "react";
 
-export const EditableList = ({
+export function EditableList({
   data,
   value,
   onChange,
@@ -27,7 +27,7 @@ export const EditableList = ({
   onChange: (id: string) => void;
   onAdd: (id: string) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
-}) => {
+}) {
   const [addData, setAddData] = useState("");
 
   return (
@@ -78,7 +78,7 @@ export const EditableList = ({
               onClick={() => {
                 onAdd(addData);
               }}
-              className="rounded-md bg-teal-500 px-2 py-1"
+              className="rounded-md bg-secondary px-2 py-1"
             >
               追加
             </button>
@@ -90,4 +90,4 @@ export const EditableList = ({
       </Content>
     </Select>
   );
-};
+}

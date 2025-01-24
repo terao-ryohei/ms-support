@@ -20,7 +20,7 @@ export function useToast() {
   return useContext(OpenToastContext);
 }
 
-export const ToastProvider = ({ children }: { children: ReactNode }) => {
+export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   const openToast = useCallback((params: OpenToastParams) => {
@@ -51,4 +51,4 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
       </Provider>
     </OpenToastContext.Provider>
   );
-};
+}

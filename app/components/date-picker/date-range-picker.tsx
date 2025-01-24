@@ -75,7 +75,7 @@ const PRESETS: Preset[] = [
 ];
 
 /** The DateRangePicker component allows a user to select a range of dates */
-export const DateRangePicker = ({
+export function DateRangePicker({
   initialDateFrom = new Date(new Date().setHours(0, 0, 0, 0)),
   initialDateTo,
   initialCompareFrom,
@@ -84,7 +84,7 @@ export const DateRangePicker = ({
   align = "center",
   locale = "ja-JP",
   showCompare = false,
-}: DateRangePickerProps): JSX.Element => {
+}: DateRangePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const [range, setRange] = useState<DateRange>({
@@ -536,4 +536,4 @@ export const DateRangePicker = ({
       </PopoverContent>
     </Popover>
   );
-};
+}

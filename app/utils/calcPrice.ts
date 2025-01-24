@@ -1,8 +1,7 @@
-import type { RoundType } from "server/api/claim/excel";
+import type { CalcType } from "~/types/calcType";
+import type { RoundType } from "~/types/roundType";
 
-export type CalcType = "highLow" | "center" | "fixed";
-
-export const calcPrice = ({
+export function calcPrice({
   workPrice,
   from,
   to,
@@ -16,18 +15,13 @@ export const calcPrice = ({
   roundType: RoundType;
   roundDigit: number;
   calcType: CalcType;
-}) => {
+}) {
   let fromDivide = from;
   let toDivide = to;
 
   if (calcType === "center") {
     fromDivide = (Number(from) + Number(to)) / 2;
     toDivide = fromDivide;
-  }
-
-  if (calcType === "fixed") {
-    fromDivide = 160;
-    toDivide = 160;
   }
 
   const price = Number(String(workPrice).replaceAll(",", ""));
@@ -60,4 +54,4 @@ export const calcPrice = ({
         underPrice: Math.ceil(upRound) * upDigit,
       };
   }
-};
+}

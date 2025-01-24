@@ -1,14 +1,11 @@
 import {
-  DndContext,
   type DragEndEvent,
   KeyboardSensor,
   MouseSensor,
   TouchSensor,
-  closestCenter,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { restrictToHorizontalAxis } from "@dnd-kit/modifiers";
 import { arrayMove } from "@dnd-kit/sortable";
 import { Link, useLoaderData } from "@remix-run/react";
 import { compareItems, rankItem } from "@tanstack/match-sorter-utils";
@@ -17,7 +14,6 @@ import {
   type ColumnDef,
   type ColumnFiltersState,
   type FilterFn,
-  type Row,
   type RowSelectionState,
   type SortingFn,
   type SortingState,
@@ -32,41 +28,25 @@ import { hc } from "hono/client";
 import { useCallback, useMemo, useState } from "react";
 import { useRemixForm } from "remix-hook-form";
 import type { AppType } from "server";
-import type { RoundType } from "~/types/roundType";
-import type { QuoteValues } from "server/api/quote/excel";
 import { EditableCell } from "~/components/table/data-table-editable-row";
-import { DateRangePicker } from "~/components/date-picker/date-range-picker";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "~/components/table/dropdown-menu";
 import { EditableList } from "~/components/table/editable-list";
-import { EditableTable } from "~/components/table/editable-table";
-import { Input } from "~/components/input/input";
 import { useToast } from "~/components/toast/toastProvider";
-import { calcPeriod } from "~/utils/calcPeriod";
-import { calcPrice } from "~/utils/calcPrice";
-import { datePipe } from "~/utils/datePipe";
 import { defaultData } from "~/constants/default";
-import { dlBlob } from "~/utils/dlBlob";
-import { isHasUndefined } from "~/utils/typeGuard";
 import type { CalcType } from "~/types/calcType";
+import type { RoundType } from "~/types/roundType";
+import { calcPrice } from "~/utils/calcPrice";
+import type { loader } from ".";
 
 const translatedArray = {
   id: "契約ID",
-  isHour: "時給計算",
-  isFixed: "固定清算",
-  worker: "作業従事者",
-  company: "見積先企業",
-  sales: "客先営業担当者",
-  subject: "件名",
-  contractType: "契約形態",
-  contractRange: "契約期間",
+  isHour: "時給",
+  isFixed: "固定",
+  worker: "作業者名",
+  company: "顧客",
+  sales: "営業担当",
+  subject: "案件名",
   periodDate: "支払期日",
-  document: "成果物",
-  workPrice: "単価",
+  workPrice: "出単価",
   paidFrom: "清算幅（下限）",
   paidTo: "清算幅（上限）",
   calcType: "超過控除の計算",
@@ -76,22 +56,14 @@ const translatedArray = {
 
 const client = hc<AppType>(import.meta.env.VITE_API_URL);
 
-export const loader = async () => {
-  const contractData = await (
-    await client.api.contract.all.$get({
-      query: { type: "customer" },
-    })
-  ).json();
-  const salesData = await (await client.api.sales.$get()).json();
-  const companiesData = await (await client.api.companies.$get()).json();
-  const workersData = await (await client.api.workers.$get()).json();
-  return { contractData, salesData, companiesData, workersData };
-};
-
-export default function Index() {
+export const useHooks = () => {
   const { contractData, salesData, companiesData, workersData } =
     useLoaderData<typeof loader>();
   type ContractData = typeof contractData extends (infer U)[] ? U : never;
+
+  const { register, getValues } = useRemixForm<{ initial: string }>({
+    defaultValues: { initial: "" },
+  });
 
   const [data, setData] = useState<typeof contractData>(contractData);
   const [salesList, setSalesList] = useState<typeof salesData>(salesData);
@@ -105,15 +77,11 @@ export default function Index() {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [columnOrder, setColumnOrder] = useState<string[]>([
     "select-col",
-    "quote",
+    "claim",
     ...Object.keys(translatedArray),
   ]);
 
   const openToast = useToast();
-
-  const { register, getValues } = useRemixForm<{ initial: string }>({
-    defaultValues: { initial: "" },
-  });
 
   const onUpdate = useCallback(
     (columnId: string, value: string, type: "更新" | "追加" | "削除") => {
@@ -163,14 +131,14 @@ export default function Index() {
         ),
       },
       {
-        id: "quote",
+        id: "claim",
         cell: (c: CellContext<ContractData, string>) => (
           <div className="flex items-center space-x-2">
             <Link
-              to={`/quote/create/?id=${c.row.getValue("id")}`}
-              className="mx-auto w-full text-nowrap rounded-lg bg-amber-400 px-1 py-2 font-bold"
+              to={`/claim/create/?id=${c.row.getValue("id")}`}
+              className="mx-auto w-full text-nowrap rounded-lg bg-orange-400 px-1 py-2 font-bold"
             >
-              見積書
+              請求書
             </Link>
           </div>
         ),
@@ -358,28 +326,6 @@ export default function Index() {
                     }}
                   />
                 );
-              case "contractRange":
-                return (
-                  <DateRangePicker
-                    initialDateFrom={c.cell.getValue().split("~")[0]}
-                    initialDateTo={c.cell.getValue().split("~")[1]}
-                    onUpdate={({ range: { from, to } }) => {
-                      if (from && to) {
-                        client.api.contract.$put({
-                          json: {
-                            id: data[c.row.index].id,
-                            values: { from: datePipe(from), to: datePipe(to) },
-                          },
-                        });
-                        onUpdate(
-                          c.column.id,
-                          `${datePipe(from)}~${datePipe(to)}`,
-                          "更新",
-                        );
-                      }
-                    }}
-                  />
-                );
               default:
                 return EditableCell(c);
             }
@@ -400,18 +346,18 @@ export default function Index() {
 
       if (
         columnId === "calcType" ||
-        columnId === "workPrice" ||
+        columnId === "price" ||
         columnId === "paidTo" ||
         columnId === "paidFrom" ||
         columnId === "roundType" ||
         columnId === "roundDigit"
       ) {
         const { overPrice, underPrice } = calcPrice({
-          workPrice: data[rowIndex].workPrice ?? 0,
-          from: data[rowIndex].paidFrom ?? 0,
-          to: data[rowIndex].paidTo ?? 0,
-          roundType: (data[rowIndex].roundType ?? "round") as RoundType,
-          roundDigit: data[rowIndex].roundDigit ?? 0,
+          workPrice: data[rowIndex].workPrice,
+          from: data[rowIndex].paidFrom,
+          to: data[rowIndex].paidTo,
+          roundType: data[rowIndex].roundType as RoundType,
+          roundDigit: data[rowIndex].roundDigit,
           calcType: value as CalcType,
         });
         setData((data) => {
@@ -425,7 +371,7 @@ export default function Index() {
               overPrice,
               underPrice,
             },
-            id: data[rowIndex].paymentId,
+            id: data[rowIndex].id,
           },
         });
       }
@@ -439,18 +385,10 @@ export default function Index() {
         case "paidFrom":
         case "paidTo":
         case "roundDigit":
-          await client.api.contract.$put({
+          await client.api.payment.$put({
             json: {
               values: { [columnId]: Number(value.replaceAll(/\D/g, "")) },
-              id: data[rowIndex].id,
-            },
-          });
-          break;
-        case "contractRange":
-          await client.api.contract.$put({
-            json: {
-              values: { from: value.split("~")[0], to: value.split("~")[1] },
-              id: data[rowIndex].id,
+              id: data[rowIndex].paymentId,
             },
           });
           break;
@@ -514,7 +452,6 @@ export default function Index() {
         },
       },
     });
-
     await (await client.api.contract.all.$get({ query: { type: "customer" } }))
       .json()
       .then((newData) => {
@@ -568,155 +505,14 @@ export default function Index() {
     useSensor(KeyboardSensor, {}),
   );
 
-  const createQuote = async (row: Row<ContractData>) => {
-    try {
-      const today = new Date();
-      const from = new Date(
-        String(row.getValue("contractRange") ?? "").split("~")[0],
-      );
-      const to = new Date(
-        String(row.getValue("contractRange") ?? "").split("~")[1],
-      );
-      const { overPrice, underPrice } = calcPrice({
-        workPrice: row.getValue("workPrice"),
-        from: row.getValue("paidFrom"),
-        to: row.getValue("paidTo"),
-        roundType: data[row.index].roundType as RoundType,
-        roundDigit: data[row.index].roundDigit,
-        calcType: row.getValue("calcType"),
-      });
-
-      const req = {
-        Company: row.getValue("company"),
-        Subject: row.getValue("subject"),
-        Period: calcPeriod(row.getValue("periodDate")),
-        ContractFrom: datePipe(
-          new Date(from.getFullYear(), from.getMonth(), from.getDate()),
-        ),
-        ContractTo: datePipe(
-          new Date(to.getFullYear(), to.getMonth(), to.getDate()),
-        ),
-        ClaimFrom: datePipe(
-          new Date(today.getFullYear(), today.getMonth() - 1, 1),
-        ),
-        ClaimTo: datePipe(new Date(today.getFullYear(), today.getMonth(), 0)),
-        ContractRange:
-          Number(`${to.getFullYear()}${to.getMonth()}`) -
-          Number(`${from.getFullYear()}${from.getMonth()}`),
-        Worker: row.getValue("worker"),
-        PaidFrom: row.getValue("paidFrom"),
-        PaidTo: row.getValue("paidTo"),
-        Sales: row.getValue("sales"),
-        Initial: getValues("initial"),
-        Document: row.getValue("document"),
-        ContractType: row.getValue("contractType"),
-        WorkPrice: row.getValue("workPrice"),
-        OverPrice: overPrice,
-        UnderPrice: underPrice,
-        RoundType: data[row.index].roundType,
-        RoundDigit: data[row.index].roundDigit,
-        CalcType: row.getValue("calcType"),
-      } as QuoteValues;
-
-      if (isHasUndefined(req)) {
-        const response = await client.api.quote.excel.$post({
-          json: {
-            ...req,
-            url: import.meta.env.VITE_API_URL,
-            isHour: row.getValue("isHour"),
-            isFixed: row.getValue("isFixed"),
-          },
-        });
-        await dlBlob({
-          response,
-          worker: row.getValue("worker") ?? "",
-          type: "quote",
-        });
-      } else {
-        alert("フォームを埋めてください");
-      }
-    } catch (error) {
-      console.error("Form submission error:", error);
-      alert("予期せぬエラーです");
-    }
+  return {
+    sensors,
+    table,
+    columns,
+    columnOrder,
+    data,
+    register,
+    handleDragEnd,
+    getValues,
   };
-
-  return (
-    <DndContext
-      collisionDetection={closestCenter}
-      modifiers={[restrictToHorizontalAxis]}
-      onDragEnd={handleDragEnd}
-      sensors={sensors}
-    >
-      <div className="flex h-full flex-col space-y-4">
-        <div className="flex justify-end gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-md border border-1 border-gray-500 border-solid p-2 font-medium text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
-              >
-                表示する列を選択する
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {table
-                .getAllColumns()
-                .filter(
-                  (column) =>
-                    column.getCanHide() &&
-                    Object.keys(translatedArray).includes(column.id),
-                )
-                .map((column) => (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    {translatedArray[column.id as keyof typeof translatedArray]}
-                  </DropdownMenuCheckboxItem>
-                ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <button
-            onClick={table.options.meta?.addRow}
-            type="button"
-            className="rounded-sm bg-secondary p-2 font-bold text-white"
-          >
-            新しい行を追加する
-          </button>
-        </div>
-        <EditableTable
-          table={table}
-          columns={columns}
-          headerList={translatedArray}
-          columnOrder={columnOrder}
-        />
-        <div className="flex justify-end gap-2">
-          <div className="flex flex-col gap-1">
-            作成者イニシャル
-            <Input
-              register={register("initial")}
-              props={{ placeholder: "A" }}
-            />
-          </div>
-          <button
-            onClick={async () => {
-              for (const row of table.getSelectedRowModel().rows) {
-                await new Promise((resolve) => setTimeout(resolve, 1000));
-                await createQuote(row);
-              }
-            }}
-            type="button"
-            className="rounded-sm bg-amber-400 p-2 font-bold"
-          >
-            一括で見積書を作成する
-          </button>
-        </div>
-      </div>
-    </DndContext>
-  );
-}
+};

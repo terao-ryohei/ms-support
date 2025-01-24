@@ -6,9 +6,9 @@ import { isHasUndefined } from "~/utils/typeGuard";
 
 const client = hc<AppType>(import.meta.env.VITE_API_URL);
 
-export const submit = async (
-  value: OrderValues,
-  {
+export const submit = async ({
+  value,
+  data: {
     id,
     paymentId,
     sales = "",
@@ -18,7 +18,10 @@ export const submit = async (
     underPrice,
     isFixed,
     isHour,
-  }: {
+  },
+}: {
+  value: OrderValues;
+  data: {
     id: number;
     paymentId: number;
     sales: string | null;
@@ -28,8 +31,8 @@ export const submit = async (
     underPrice: number;
     isHour: boolean;
     isFixed: boolean;
-  },
-) => {
+  };
+}) => {
   try {
     // APIリクエストなどの処理をここに記述
     if (value) {

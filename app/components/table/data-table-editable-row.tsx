@@ -3,12 +3,12 @@ import { useEffect, useState } from "react";
 
 type valueType = string | boolean | number | Date | null;
 
-export const EditableCell = <T,>({
+export function EditableCell<T>({
   getValue,
   row,
   column,
   table,
-}: CellContext<T, valueType>) => {
+}: CellContext<T, valueType>) {
   const initialValue = getValue();
 
   const [value, setValue] = useState<valueType>(initialValue);
@@ -155,4 +155,4 @@ export const EditableCell = <T,>({
         />
       );
   }
-};
+}

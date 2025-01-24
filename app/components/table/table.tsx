@@ -68,7 +68,7 @@ const TableHead = forwardRef<
 >(({ className, ...props }, ref) => (
   <th
     ref={ref}
-    className={`h-12 bg-teal-500 px-4 text-left align-middle font-bold text-muted-foreground text-white [&:has([role=checkbox])]:pr-0 ${className}`}
+    className={`h-12 bg-secondary px-4 text-left align-middle font-bold text-muted-foreground text-white [&:has([role=checkbox])]:pr-0 ${className}`}
     {...props}
   />
 ));

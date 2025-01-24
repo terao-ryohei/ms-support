@@ -1,7 +1,7 @@
 import type { ClientResponse } from "hono/client";
 import type { StatusCode } from "hono/utils/http-status";
 
-export const dlBlob = async <T>({
+export async function dlBlob<T>({
   response,
   worker,
   type,
@@ -9,7 +9,7 @@ export const dlBlob = async <T>({
   response: ClientResponse<T, StatusCode>;
   worker: string;
   type: "order" | "claim" | "quote";
-}) => {
+}) {
   const blob = await response.blob();
 
   // ダウンロードリンクを作成
@@ -26,4 +26,4 @@ export const dlBlob = async <T>({
   a.click();
   window.URL.revokeObjectURL(url);
   document.body.removeChild(a);
-};
+}

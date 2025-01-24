@@ -10,13 +10,13 @@ export type ToastItem = {
   title: string;
 };
 
-export const Toast = ({
+export function Toast({
   value,
   onClose,
 }: {
   value: ToastItem;
   onClose: (id: string) => void;
-}) => {
+}) {
   return (
     <Root
       open={value.isOpen}
@@ -31,4 +31,4 @@ export const Toast = ({
       </div>
     </Root>
   );
-};
+}

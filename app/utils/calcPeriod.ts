@@ -1,6 +1,6 @@
 import { datePipe } from "./datePipe";
 
-export const calcPeriod = (date: string) => {
+export function calcPeriod(date: string) {
   const today = new Date();
 
   const match = date.match(
@@ -51,4 +51,4 @@ export const calcPeriod = (date: string) => {
   const paymentDate = new Date(today.getFullYear(), paymentMonth, paymentDay);
 
   return datePipe(paymentDate);
-};
+}

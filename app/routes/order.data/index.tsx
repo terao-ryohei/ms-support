@@ -45,11 +45,12 @@ import { EditableList } from "~/components/table/editable-list";
 import { EditableTable } from "~/components/table/editable-table";
 import { Input } from "~/components/input/input";
 import { useToast } from "~/components/toast/toastProvider";
-import { calcPrice, type CalcType } from "~/utils/calcPrice";
+import { calcPrice } from "~/utils/calcPrice";
 import { datePipe } from "~/utils/datePipe";
-import { defaultData } from "~/utils/default";
+import { defaultData } from "~/constants/default";
 import { dlBlob } from "~/utils/dlBlob";
 import { isHasUndefined } from "~/utils/typeGuard";
+import type { CalcType } from "~/types/calcType";
 
 const translatedArray = {
   id: "契約ID",
@@ -674,7 +675,7 @@ export default function Index() {
           <button
             onClick={table.options.meta?.addRow}
             type="button"
-            className="rounded-sm bg-teal-500 p-2 font-bold text-white"
+            className="rounded-sm bg-secondary p-2 font-bold text-white"
           >
             新しい行を追加する
           </button>
@@ -688,7 +689,10 @@ export default function Index() {
         <div className="flex justify-end gap-2">
           <div className="flex flex-col gap-1">
             作成者イニシャル
-            <Input register={register("initial")} placeholder="A" />
+            <Input
+              register={register("initial")}
+              props={{ placeholder: "A" }}
+            />
           </div>
           <button
             onClick={async () => {

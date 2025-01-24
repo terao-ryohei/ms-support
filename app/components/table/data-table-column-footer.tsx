@@ -1,6 +1,6 @@
 import type { Table } from "@tanstack/react-table";
 
-export const FooterCell = <T,>({ table }: { table: Table<T> }) => {
+export function FooterCell<T>({ table }: { table: Table<T> }) {
   const meta = table.options.meta;
   const selectedRows = table.getSelectedRowModel().rows;
   const removeRows = () => {
@@ -20,10 +20,10 @@ export const FooterCell = <T,>({ table }: { table: Table<T> }) => {
       <button
         onClick={meta?.addRow}
         type="button"
-        className="rounded-sm bg-teal-500 p-2 font-bold"
+        className="rounded-sm bg-secondary p-2 font-bold"
       >
         契約情報を追加する +
       </button>
     </div>
   );
-};
+}
