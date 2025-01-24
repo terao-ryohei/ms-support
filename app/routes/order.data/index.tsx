@@ -675,7 +675,7 @@ export default function Index() {
           <button
             onClick={table.options.meta?.addRow}
             type="button"
-            className="rounded-sm bg-secondary p-2 font-bold text-white"
+            className="rounded-xs bg-secondary p-2 font-bold text-white"
           >
             新しい行を追加する
           </button>
@@ -702,7 +702,7 @@ export default function Index() {
               }
             }}
             type="button"
-            className="rounded-sm bg-yellow-400 p-2 font-bold"
+            className="rounded-xs bg-yellow-400 p-2 font-bold"
           >
             一括で注文書を作成する
           </button>

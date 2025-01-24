@@ -23,7 +23,7 @@ export function EditableTable<T, U>({
   columnOrder: string[];
 }) {
   return (
-    <div className="mx-auto h-full w-full min-w-[800px] flex-grow overflow-auto rounded-md border">
+    <div className="mx-auto h-full w-full min-w-[800px] flex-grow overflow-auto overscroll-x-contain rounded-md border">
       <Table className="h-[80%] w-[90%] overflow-y-auto">
         <TableHeader>
           <SortableContext
@@ -59,7 +59,7 @@ export function EditableTable<T, U>({
                   return column.getIsPinned() === "left" ? (
                     <TableCell
                       key={id}
-                      className="border-border border-b border-solid bg-white"
+                      className="border-b border-solid bg-white"
                     >
                       {flexRender(column.columnDef.cell, getContext())}
                     </TableCell>
