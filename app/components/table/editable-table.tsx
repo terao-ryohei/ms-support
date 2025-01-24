@@ -23,7 +23,7 @@ export function EditableTable<T, U>({
   columnOrder: string[];
 }) {
   return (
-    <div className="mx-auto h-full w-full min-w-[800px] flex-grow overflow-auto overscroll-x-contain rounded-md border">
+    <div className="mx-auto h-full w-full min-w-[800px] flex-grow overflow-auto overscroll-x-contain rounded-md border border-muted">
       <Table className="h-[80%] w-[90%] overflow-y-auto">
         <TableHeader>
           <SortableContext

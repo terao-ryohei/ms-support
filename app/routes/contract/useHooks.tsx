@@ -1,57 +1,65 @@
 import {
   type DragEndEvent,
-  KeyboardSensor,
+  useSensors,
+  useSensor,
   MouseSensor,
   TouchSensor,
-  useSensor,
-  useSensors,
+  KeyboardSensor,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
-import { Link, useLoaderData } from "@remix-run/react";
+import { useLoaderData } from "@remix-run/react";
 import { compareItems, rankItem } from "@tanstack/match-sorter-utils";
 import {
-  type CellContext,
-  type ColumnDef,
+  type SortingState,
   type ColumnFiltersState,
-  type FilterFn,
+  type VisibilityState,
   type RowSelectionState,
   type SortingFn,
-  type SortingState,
-  type VisibilityState,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getSortedRowModel,
   sortingFns,
+  type FilterFn,
+  type ColumnDef,
+  type CellContext,
   useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
 } from "@tanstack/react-table";
-import { hc } from "hono/client";
-import { useCallback, useMemo, useState } from "react";
-import { useRemixForm } from "remix-hook-form";
-import type { AppType } from "server";
+import { useState, useCallback, useMemo } from "react";
+import { DateRangePicker } from "~/components/date-picker/date-range-picker";
 import { EditableCell } from "~/components/table/data-table-editable-row";
+import { RemoveRowCell } from "~/components/table/data-table-remove-row";
 import { EditableList } from "~/components/table/editable-list";
 import { useToast } from "~/components/toast/toastProvider";
 import { defaultData } from "~/constants/default";
-import type { CalcType } from "~/types/calcType";
-import type { RoundType } from "~/types/roundType";
-import { calcPrice } from "~/utils/calcPrice";
+import { datePipe } from "~/utils/datePipe";
+import { calcComma } from "~/utils/price";
 import type { loader } from ".";
+import type { AppType } from "server";
+import { hc } from "hono/client";
 
 export const translatedArray = {
   id: "契約ID",
-  isHour: "時給",
-  isFixed: "固定",
   worker: "作業者名",
-  company: "顧客",
-  sales: "営業担当",
+  claimSales: "営業担当",
+  orderSales: "要員担当",
+  claimCompany: "顧客",
+  orderCompany: "所属",
   subject: "案件名",
-  periodDate: "支払期日",
-  workPrice: "出単価",
-  paidFrom: "清算幅（下限）",
-  paidTo: "清算幅（上限）",
-  calcType: "超過控除の計算",
-  overPrice: "超過単価",
-  underPrice: "控除単価",
+  contractRange: "契約期間",
+  claimPrice: "入単価",
+  orderPrice: "出単価",
+  profit: "粗利",
+  profitRatio: "粗利率",
+  claimPaidTo: "入清算上限",
+  claimPaidFrom: "入清算下限",
+  claimRoundType: "入丸めタイプ",
+  claimRoundDigit: "入丸め桁",
+  claimPeriodDate: "入金期日",
+  orderPaidTo: "出清算上限",
+  orderPaidFrom: "出清算下限",
+  orderRoundType: "出丸めタイプ",
+  orderRoundDigit: "出丸め桁",
+  orderPeriodDate: "出金期日",
 };
 
 const client = hc<AppType>(import.meta.env.VITE_API_URL);
@@ -61,11 +69,25 @@ export const useHooks = () => {
     useLoaderData<typeof loader>();
   type ContractData = typeof contractData extends (infer U)[] ? U : never;
 
-  const { register, getValues } = useRemixForm<{ initial: string }>({
-    defaultValues: { initial: "" },
-  });
+  const openToast = useToast();
 
-  const [data, setData] = useState<typeof contractData>(contractData);
+  const [data, setData] = useState(
+    contractData.map((data) => ({
+      ...data,
+      claimPrice: data.claimPayment.workPrice,
+      orderPrice: data.orderPayment.workPrice,
+      claimPaidTo: data.claimPayment.paidTo,
+      claimPaidFrom: data.claimPayment.paidFrom,
+      claimRoundType: data.claimPayment.roundType,
+      claimRoundDigit: data.claimPayment.roundDigit,
+      orderPaidTo: data.orderPayment.paidTo,
+      orderPaidFrom: data.orderPayment.paidFrom,
+      orderRoundType: data.orderPayment.roundType,
+      orderRoundDigit: data.orderPayment.roundDigit,
+      claimPeriodDate: data.claimPayment.periodDate,
+      orderPeriodDate: data.orderPayment.periodDate,
+    })),
+  );
   const [salesList, setSalesList] = useState<typeof salesData>(salesData);
   const [companiesList, setCompaniesList] =
     useState<typeof companiesData>(companiesData);
@@ -76,12 +98,9 @@ export const useHooks = () => {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [columnOrder, setColumnOrder] = useState<string[]>([
-    "select-col",
-    "claim",
     ...Object.keys(translatedArray),
+    "remove",
   ]);
-
-  const openToast = useToast();
 
   const onUpdate = useCallback(
     (columnId: string, value: string, type: "更新" | "追加" | "削除") => {
@@ -119,31 +138,6 @@ export const useHooks = () => {
 
   const columns: ColumnDef<ContractData>[] = useMemo(
     () => [
-      {
-        id: "select-col",
-        cell: ({ row }) => (
-          <input
-            type="checkbox"
-            checked={row.getIsSelected()}
-            disabled={!row.getCanSelect()}
-            onChange={row.getToggleSelectedHandler()}
-          />
-        ),
-      },
-      {
-        id: "claim",
-        cell: (c: CellContext<ContractData, string>) => (
-          <div className="flex items-center space-x-2">
-            <Link
-              to={`/claim/create/?id=${c.row.getValue("id")}`}
-              className="mx-auto w-full text-nowrap rounded-lg bg-orange-400 px-1 py-2 font-bold"
-            >
-              請求書
-            </Link>
-          </div>
-        ),
-      },
-
       ...Object.values(translatedArray).map((_, i) => {
         return {
           accessorKey: Object.keys(translatedArray)[i],
@@ -152,16 +146,72 @@ export const useHooks = () => {
             switch (c.column.id) {
               case "id":
                 return <span>{c.cell.getValue()}</span>;
-              case "sales":
+              case "profit":
+                return (
+                  <div>
+                    {calcComma(
+                      Number(
+                        String(c.row.getValue("claimPrice")).replaceAll(
+                          /\D/g,
+                          "",
+                        ),
+                      ) -
+                        Number(
+                          String(c.row.getValue("orderPrice")).replaceAll(
+                            /\D/g,
+                            "",
+                          ),
+                        ),
+                    )}
+                  </div>
+                );
+              case "profitRatio":
+                return (
+                  <div>
+                    {Math.round(
+                      ((Number(
+                        String(c.row.getValue("claimPrice")).replaceAll(
+                          /\D/g,
+                          "",
+                        ),
+                      ) -
+                        Number(
+                          String(c.row.getValue("orderPrice")).replaceAll(
+                            /\D/g,
+                            "",
+                          ),
+                        )) /
+                        Number(
+                          String(c.row.getValue("claimPrice")).replaceAll(
+                            /\D/g,
+                            "",
+                          ),
+                        )) *
+                        100 *
+                        10 ** 3,
+                    ) /
+                      10 ** 3}
+                    %
+                  </div>
+                );
+              case "claimSales":
+              case "orderSales":
                 return (
                   <EditableList
                     data={salesList}
-                    value={data[c.row.index].salesId ?? 0}
+                    value={
+                      (c.column.id === "claimSales"
+                        ? data[c.row.index].claimSalesId
+                        : data[c.row.index].orderSalesId) ?? 0
+                    }
                     onChange={(value: string) => {
                       client.api.relation.$put({
                         json: {
                           id: data[c.row.index].id,
-                          mode: "customer",
+                          mode:
+                            c.column.id === "claimSales"
+                              ? "customer"
+                              : "partner",
                           type: "salesId",
                           value: Number(value),
                         },
@@ -210,16 +260,24 @@ export const useHooks = () => {
                     }}
                   />
                 );
-              case "company":
+              case "claimCompany":
+              case "orderCompany":
                 return (
                   <EditableList
                     data={companiesList}
-                    value={data[c.row.index].companyId ?? 0}
+                    value={
+                      (c.column.id === "claimCompany"
+                        ? data[c.row.index].claimCompanyId
+                        : data[c.row.index].orderCompanyId) ?? 0
+                    }
                     onChange={(value: string) => {
                       client.api.relation.$put({
                         json: {
                           id: data[c.row.index].id,
-                          mode: "customer",
+                          mode:
+                            c.column.id === "claimCompany"
+                              ? "customer"
+                              : "partner",
                           type: "companyId",
                           value: Number(value),
                         },
@@ -277,7 +335,10 @@ export const useHooks = () => {
                       client.api.relation.$put({
                         json: {
                           id: data[c.row.index].id,
-                          mode: "customer",
+                          mode:
+                            c.column.id === "claimCompany"
+                              ? "customer"
+                              : "partner",
                           type: "workerId",
                           value: Number(value),
                         },
@@ -326,14 +387,39 @@ export const useHooks = () => {
                     }}
                   />
                 );
+              case "contractRange":
+                return (
+                  <DateRangePicker
+                    initialDateFrom={c.cell.getValue().split("~")[0]}
+                    initialDateTo={c.cell.getValue().split("~")[1]}
+                    onUpdate={({ range: { from, to } }) => {
+                      if (from && to) {
+                        client.api.contract.$put({
+                          json: {
+                            id: data[c.row.index].id,
+                            values: { from: datePipe(from), to: datePipe(to) },
+                          },
+                        });
+                        onUpdate(
+                          c.column.id,
+                          `${datePipe(from)}~${datePipe(to)}`,
+                          "更新",
+                        );
+                      }
+                    }}
+                  />
+                );
               default:
                 return EditableCell(c);
             }
           },
           sortingFn: fuzzySort,
-          size: Object.keys(translatedArray)[i] === "subject" ? 300 : undefined,
         };
       }),
+      {
+        id: "remove",
+        cell: RemoveRowCell,
+      },
     ],
     [fuzzySort, onUpdate, data, salesList, companiesList, workersList],
   );
@@ -343,68 +429,94 @@ export const useHooks = () => {
       if (value === null || value === "") {
         return;
       }
-
-      if (
-        columnId === "calcType" ||
-        columnId === "price" ||
-        columnId === "paidTo" ||
-        columnId === "paidFrom" ||
-        columnId === "roundType" ||
-        columnId === "roundDigit"
-      ) {
-        const { overPrice, underPrice } = calcPrice({
-          workPrice: data[rowIndex].workPrice,
-          from: data[rowIndex].paidFrom,
-          to: data[rowIndex].paidTo,
-          roundType: data[rowIndex].roundType as RoundType,
-          roundDigit: data[rowIndex].roundDigit,
-          calcType: value as CalcType,
-        });
-        setData((data) => {
-          data[rowIndex].overPrice = overPrice;
-          data[rowIndex].underPrice = underPrice;
-          return data;
-        });
-        await client.api.payment.$put({
-          json: {
-            values: {
-              overPrice,
-              underPrice,
-            },
-            id: data[rowIndex].id,
-          },
-        });
-      }
-
       switch (columnId) {
-        case "sales":
-        case "company":
+        case "claimSales":
+        case "orderSales":
+        case "claimCompany":
+        case "orderCompany":
         case "worker":
           break;
-        case "workPrice":
-        case "paidFrom":
-        case "paidTo":
-        case "roundDigit":
+        case "claimPrice":
+        case "claimPaidFrom":
+        case "claimPaidTo":
+        case "claimRoundDigit": {
+          let columnName =
+            columnId.replaceAll("claim", "")[0].toLowerCase() +
+            columnId.replaceAll("claim", "").slice(1);
+          if (columnName === "price") {
+            columnName = "workPrice";
+          }
           await client.api.payment.$put({
             json: {
-              values: { [columnId]: Number(value.replaceAll(/\D/g, "")) },
-              id: data[rowIndex].paymentId,
+              values: {
+                [columnName]: Number(value.replaceAll(/\D/g, "")),
+              },
+              id: data[rowIndex].claimPayment.paymentId,
             },
           });
           break;
-        case "subject":
-        case "document":
-        case "contractType":
+        }
+        case "orderPrice":
+        case "orderPaidFrom":
+        case "orderPaidTo":
+        case "orderRoundDigit": {
+          let columnName =
+            columnId.replaceAll("order", "")[0].toLowerCase() +
+            columnId.replaceAll("order", "").slice(1);
+          if (columnName === "price") {
+            columnName = "workPrice";
+          }
+          await client.api.payment.$put({
+            json: {
+              values: {
+                [columnName]: Number(value.replaceAll(/\D/g, "")),
+              },
+              id: data[rowIndex].orderPayment.paymentId,
+            },
+          });
+          break;
+        }
+        case "contractRange":
+          await client.api.contract.$put({
+            json: {
+              values: { from: value.split("~")[0], to: value.split("~")[1] },
+              id: data[rowIndex].id,
+            },
+          });
+          break;
+        case "claimRoundType":
+        case "claimPeriodDate": {
+          const columnName =
+            columnId.replaceAll("claim", "")[0].toLowerCase() +
+            columnId.replaceAll("claim", "").slice(1);
+          await client.api.payment.$put({
+            json: {
+              values: {
+                [columnName]: value,
+              },
+              id: data[rowIndex].claimPayment.paymentId,
+            },
+          });
+          break;
+        }
+        case "orderRoundType":
+        case "orderPeriodDate": {
+          const columnName =
+            columnId.replaceAll("order", "")[0].toLowerCase() +
+            columnId.replaceAll("order", "").slice(1);
+          await client.api.payment.$put({
+            json: {
+              values: {
+                [columnName]: value,
+              },
+              id: data[rowIndex].orderPayment.paymentId,
+            },
+          });
+          break;
+        }
+        default:
           await client.api.contract.$put({
             json: { values: { [columnId]: value }, id: data[rowIndex].id },
-          });
-          break;
-        default:
-          await client.api.payment.$put({
-            json: {
-              values: { [columnId]: value },
-              id: data[rowIndex].paymentId,
-            },
           });
           break;
       }
@@ -425,38 +537,60 @@ export const useHooks = () => {
   );
 
   const addRow = async () => {
-    await client.api.contract.$post({
-      json: {
-        contract: {
-          worker: defaultData.worker,
-          company: defaultData.company,
-          sales: defaultData.sales,
-          from: defaultData.contractRange.split("~")[0],
-          to: defaultData.contractRange.split("~")[1],
-          contractType: defaultData.contractType,
-          subject: defaultData.subject,
-          document: defaultData.document,
+    await (
+      await client.api.contract.$post({
+        json: {
+          contract: {
+            worker: defaultData.worker,
+            company: defaultData.company,
+            sales: defaultData.sales,
+            from: defaultData.contractRange.split("~")[0],
+            to: defaultData.contractRange.split("~")[1],
+            contractType: defaultData.contractType,
+            subject: defaultData.subject,
+            document: defaultData.document,
+          },
+          payment: {
+            paidFrom: defaultData.paidFrom,
+            paidTo: defaultData.paidTo,
+            isHour: defaultData.isHour,
+            periodDate: defaultData.periodDate,
+            workPrice: defaultData.workPrice,
+            roundDigit: defaultData.roundDigit,
+            roundType: defaultData.roundType,
+            calcType: defaultData.calcType,
+            overPrice: defaultData.overPrice,
+            underPrice: defaultData.underPrice,
+            isFixed: defaultData.isFixed,
+          },
         },
-        payment: {
-          paidFrom: defaultData.paidFrom,
-          paidTo: defaultData.paidTo,
-          isHour: defaultData.isHour,
-          periodDate: defaultData.periodDate,
-          workPrice: defaultData.workPrice,
-          roundDigit: defaultData.roundDigit,
-          roundType: defaultData.roundType,
-          calcType: defaultData.calcType,
-          overPrice: defaultData.overPrice,
-          underPrice: defaultData.underPrice,
-          isFixed: defaultData.isFixed,
-        },
-      },
+      })
+    ).json();
+
+    await (await client.api.contract.payment.$get()).json().then((newData) => {
+      setData(
+        newData.map((data) => ({
+          ...data,
+          claimPrice: data.claimPayment.workPrice,
+          orderPrice: data.orderPayment.workPrice,
+          claimPaidTo: data.claimPayment.paidTo,
+          claimPaidFrom: data.claimPayment.paidFrom,
+          claimRoundType: data.claimPayment.roundType,
+          claimRoundDigit: data.claimPayment.roundDigit,
+          orderPaidTo: data.orderPayment.paidTo,
+          orderPaidFrom: data.orderPayment.paidFrom,
+          orderRoundType: data.orderPayment.roundType,
+          orderRoundDigit: data.orderPayment.roundDigit,
+          claimPeriodDate: data.claimPayment.periodDate,
+          orderPeriodDate: data.orderPayment.periodDate,
+        })),
+      );
     });
-    await (await client.api.contract.all.$get({ query: { type: "customer" } }))
-      .json()
-      .then((newData) => {
-        setData(newData);
-      });
+  };
+
+  const removeRow = async (rowIndex: number) => {
+    await client.api.contract.$delete({ json: { id: data[rowIndex].id } });
+    setData((old) => old.filter((_row, index) => index !== rowIndex));
   };
 
   const table = useReactTable({
@@ -482,7 +616,7 @@ export const useHooks = () => {
     meta: {
       updateData,
       addRow,
-      removeRow: () => {},
+      removeRow,
       removeSelectedRows: () => {},
     },
   });
@@ -510,9 +644,6 @@ export const useHooks = () => {
     table,
     columns,
     columnOrder,
-    data,
-    register,
     handleDragEnd,
-    getValues,
   };
 };

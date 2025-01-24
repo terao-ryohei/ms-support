@@ -10,26 +10,9 @@ import {
   DropdownMenuTrigger,
 } from "~/components/table/dropdown-menu";
 import { EditableTable } from "~/components/table/editable-table";
-import { useHooks } from "./useHooks";
+import { translatedArray, useHooks } from "./useHooks";
 import { onSubmit } from "./submit";
 import type { RoundType } from "~/types/roundType";
-
-const translatedArray = {
-  id: "契約ID",
-  isHour: "時給",
-  isFixed: "固定",
-  worker: "作業者名",
-  company: "顧客",
-  sales: "営業担当",
-  subject: "案件名",
-  periodDate: "支払期日",
-  workPrice: "出単価",
-  paidFrom: "清算幅（下限）",
-  paidTo: "清算幅（上限）",
-  calcType: "超過控除の計算",
-  overPrice: "超過単価",
-  underPrice: "控除単価",
-};
 
 const client = hc<AppType>(import.meta.env.VITE_API_URL);
 
@@ -57,6 +40,18 @@ export default function Index() {
     getValues,
   } = useHooks();
 
+  const onClick = async () => {
+    for (const row of table.getSelectedRowModel().rows) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await onSubmit({
+        row,
+        roundType: data[row.index].roundType as RoundType,
+        roundDigit: data[row.index].roundDigit,
+        initial: getValues("initial"),
+      });
+    }
+  };
+
   return (
     <DndContext
       collisionDetection={closestCenter}
@@ -70,7 +65,7 @@ export default function Index() {
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-md border border-1 border-gray-500 border-solid p-2 font-medium text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-md border border-gray-500 border-solid p-2 font-medium text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
               >
                 表示する列を選択する
               </button>
@@ -100,7 +95,7 @@ export default function Index() {
           <button
             onClick={table.options.meta?.addRow}
             type="button"
-            className="rounded-xs bg-secondary p-2 font-bold text-white"
+            className="rounded-sm bg-secondary p-2 font-bold text-white"
           >
             新しい行を追加する
           </button>
@@ -120,19 +115,9 @@ export default function Index() {
             />
           </div>
           <button
-            onClick={async () => {
-              for (const row of table.getSelectedRowModel().rows) {
-                await new Promise((resolve) => setTimeout(resolve, 1000));
-                await onSubmit({
-                  row,
-                  roundType: data[row.index].roundType as RoundType,
-                  roundDigit: data[row.index].roundDigit,
-                  initial: getValues("initial"),
-                });
-              }
-            }}
+            onClick={onClick}
             type="button"
-            className="rounded-xs bg-orange-400 p-2 font-bold"
+            className="rounded-sm bg-orange-400 p-2 font-bold"
           >
             一括で請求書を作成する
           </button>

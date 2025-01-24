@@ -46,7 +46,7 @@ export function DraggableTableHeader<TData>({
         header.id !== "isFixed" && (
           <div className="flex gap-2">
             <input
-              className="my-1 w-full rounded-xs p-1"
+              className="my-1 w-full rounded-sm p-1"
               placeholder="検索"
               onChange={(e) => {
                 column.setFilterValue(e.target.value);

@@ -1,33 +1,32 @@
 import {
   type DragEndEvent,
-  KeyboardSensor,
+  useSensors,
+  useSensor,
   MouseSensor,
   TouchSensor,
-  useSensor,
-  useSensors,
+  KeyboardSensor,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { Link, useLoaderData } from "@remix-run/react";
 import { compareItems, rankItem } from "@tanstack/match-sorter-utils";
 import {
-  type CellContext,
-  type ColumnDef,
+  type SortingState,
   type ColumnFiltersState,
-  type FilterFn,
+  type VisibilityState,
   type RowSelectionState,
   type SortingFn,
-  type SortingState,
-  type VisibilityState,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getSortedRowModel,
   sortingFns,
+  type FilterFn,
+  type ColumnDef,
+  type CellContext,
   useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
 } from "@tanstack/react-table";
-import { hc } from "hono/client";
-import { useCallback, useMemo, useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useRemixForm } from "remix-hook-form";
-import type { AppType } from "server";
+import { DateRangePicker } from "~/components/date-picker/date-range-picker";
 import { EditableCell } from "~/components/table/data-table-editable-row";
 import { EditableList } from "~/components/table/editable-list";
 import { useToast } from "~/components/toast/toastProvider";
@@ -35,18 +34,24 @@ import { defaultData } from "~/constants/default";
 import type { CalcType } from "~/types/calcType";
 import type { RoundType } from "~/types/roundType";
 import { calcPrice } from "~/utils/calcPrice";
+import { datePipe } from "~/utils/datePipe";
 import type { loader } from ".";
+import type { AppType } from "server";
+import { hc } from "hono/client";
 
 export const translatedArray = {
   id: "契約ID",
   isHour: "時給",
   isFixed: "固定",
   worker: "作業者名",
-  company: "顧客",
-  sales: "営業担当",
+  company: "所属",
+  sales: "要員担当",
   subject: "案件名",
+  contractRange: "契約期間",
+  contractType: "契約形態",
+  document: "成果物",
   periodDate: "支払期日",
-  workPrice: "出単価",
+  workPrice: "入単価",
   paidFrom: "清算幅（下限）",
   paidTo: "清算幅（上限）",
   calcType: "超過控除の計算",
@@ -61,10 +66,6 @@ export const useHooks = () => {
     useLoaderData<typeof loader>();
   type ContractData = typeof contractData extends (infer U)[] ? U : never;
 
-  const { register, getValues } = useRemixForm<{ initial: string }>({
-    defaultValues: { initial: "" },
-  });
-
   const [data, setData] = useState<typeof contractData>(contractData);
   const [salesList, setSalesList] = useState<typeof salesData>(salesData);
   const [companiesList, setCompaniesList] =
@@ -77,11 +78,15 @@ export const useHooks = () => {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [columnOrder, setColumnOrder] = useState<string[]>([
     "select-col",
-    "claim",
+    "order",
     ...Object.keys(translatedArray),
   ]);
 
   const openToast = useToast();
+
+  const { register, getValues } = useRemixForm<{ initial: string }>({
+    defaultValues: { initial: "" },
+  });
 
   const onUpdate = useCallback(
     (columnId: string, value: string, type: "更新" | "追加" | "削除") => {
@@ -131,19 +136,18 @@ export const useHooks = () => {
         ),
       },
       {
-        id: "claim",
+        id: "order",
         cell: (c: CellContext<ContractData, string>) => (
           <div className="flex items-center space-x-2">
             <Link
-              to={`/claim/create/?id=${c.row.getValue("id")}`}
-              className="mx-auto w-full text-nowrap rounded-lg bg-orange-400 px-1 py-2 font-bold"
+              to={`/order/create/?id=${c.row.getValue("id")}`}
+              className="mx-auto w-full text-nowrap rounded-lg bg-yellow-400 px-1 py-2 font-bold"
             >
-              請求書
+              注文書
             </Link>
           </div>
         ),
       },
-
       ...Object.values(translatedArray).map((_, i) => {
         return {
           accessorKey: Object.keys(translatedArray)[i],
@@ -161,7 +165,7 @@ export const useHooks = () => {
                       client.api.relation.$put({
                         json: {
                           id: data[c.row.index].id,
-                          mode: "customer",
+                          mode: "partner",
                           type: "salesId",
                           value: Number(value),
                         },
@@ -219,7 +223,7 @@ export const useHooks = () => {
                       client.api.relation.$put({
                         json: {
                           id: data[c.row.index].id,
-                          mode: "customer",
+                          mode: "partner",
                           type: "companyId",
                           value: Number(value),
                         },
@@ -277,7 +281,7 @@ export const useHooks = () => {
                       client.api.relation.$put({
                         json: {
                           id: data[c.row.index].id,
-                          mode: "customer",
+                          mode: "partner",
                           type: "workerId",
                           value: Number(value),
                         },
@@ -326,6 +330,28 @@ export const useHooks = () => {
                     }}
                   />
                 );
+              case "contractRange":
+                return (
+                  <DateRangePicker
+                    initialDateFrom={c.cell.getValue().split("~")[0]}
+                    initialDateTo={c.cell.getValue().split("~")[1]}
+                    onUpdate={({ range: { from, to } }) => {
+                      if (from && to) {
+                        client.api.contract.$put({
+                          json: {
+                            id: data[c.row.index].id,
+                            values: { from: datePipe(from), to: datePipe(to) },
+                          },
+                        });
+                        onUpdate(
+                          c.column.id,
+                          `${datePipe(from)}~${datePipe(to)}`,
+                          "更新",
+                        );
+                      }
+                    }}
+                  />
+                );
               default:
                 return EditableCell(c);
             }
@@ -335,7 +361,15 @@ export const useHooks = () => {
         };
       }),
     ],
-    [fuzzySort, onUpdate, data, salesList, companiesList, workersList],
+    [
+      fuzzySort,
+      salesList,
+      companiesList,
+      workersList,
+      data,
+      onUpdate,
+      // , date
+    ],
   );
 
   const updateData = useCallback(
@@ -346,7 +380,7 @@ export const useHooks = () => {
 
       if (
         columnId === "calcType" ||
-        columnId === "price" ||
+        columnId === "workPrice" ||
         columnId === "paidTo" ||
         columnId === "paidFrom" ||
         columnId === "roundType" ||
@@ -360,6 +394,7 @@ export const useHooks = () => {
           roundDigit: data[rowIndex].roundDigit,
           calcType: value as CalcType,
         });
+
         setData((data) => {
           data[rowIndex].overPrice = overPrice;
           data[rowIndex].underPrice = underPrice;
@@ -371,7 +406,7 @@ export const useHooks = () => {
               overPrice,
               underPrice,
             },
-            id: data[rowIndex].id,
+            id: data[rowIndex].paymentId,
           },
         });
       }
@@ -380,6 +415,7 @@ export const useHooks = () => {
         case "sales":
         case "company":
         case "worker":
+        case "contractRange":
           break;
         case "workPrice":
         case "paidFrom":
@@ -452,7 +488,7 @@ export const useHooks = () => {
         },
       },
     });
-    await (await client.api.contract.all.$get({ query: { type: "customer" } }))
+    await (await client.api.contract.all.$get({ query: { type: "partner" } }))
       .json()
       .then((newData) => {
         setData(newData);

@@ -35,7 +35,7 @@ export function EditableCell<T>({
     return (
       <select
         style={{ width: column.getSize() }}
-        className="rounded-xs px-2 py-1"
+        className="rounded-sm px-2 py-1"
         onChange={(e) => {
           setValue(e.target.value);
         }}
@@ -56,7 +56,7 @@ export function EditableCell<T>({
     return (
       <select
         style={{ width: column.getSize() }}
-        className="rounded-xs px-2 py-1"
+        className="rounded-sm px-2 py-1"
         onChange={(e) => {
           setValue(e.target.value);
         }}
@@ -75,7 +75,7 @@ export function EditableCell<T>({
       return (
         <input
           type="checkbox"
-          className="!bg-white rounded-xs px-2 py-1"
+          className="!bg-white rounded-sm px-2 py-1"
           checked={(value ?? false) as boolean}
           onChange={(e) => {
             setValue(e.target.checked);
@@ -103,7 +103,7 @@ export function EditableCell<T>({
           <input
             style={{ width: column.getSize() - 50 }}
             placeholder="入力してください"
-            className="rounded-xs px-2 py-1 text-right"
+            className="rounded-sm px-2 py-1 text-right"
             value={(value ?? 0) as number}
             onChange={(e) =>
               setValue(
@@ -126,7 +126,7 @@ export function EditableCell<T>({
             style={{ width: column.getSize() }}
             type="date"
             placeholder="入力してください"
-            className="rounded-xs px-2 py-1"
+            className="rounded-sm px-2 py-1"
             value={(value ?? "") as string}
             onChange={(e) => setValue(e.target.value)}
             onBlur={onBlur}
@@ -137,7 +137,7 @@ export function EditableCell<T>({
         <input
           style={{ width: column.getSize() }}
           placeholder="入力してください"
-          className="rounded-xs px-2 py-1"
+          className="rounded-sm px-2 py-1"
           value={(value ?? "") as string}
           onChange={(e) => setValue(e.target.value)}
           onBlur={onBlur}
@@ -148,7 +148,7 @@ export function EditableCell<T>({
         <input
           style={{ width: column.getSize() }}
           placeholder="入力してください"
-          className="rounded-xs px-2 py-1"
+          className="rounded-sm px-2 py-1"
           value={(value ?? "") as string}
           onChange={(e) => setValue(e.target.value)}
           onBlur={onBlur}

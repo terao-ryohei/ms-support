@@ -47,7 +47,7 @@ export function EditableList({
             <div key={id} className="flex items-center gap-2">
               <Item
                 value={String(id)}
-                className="flex flex-grow cursor-pointer gap-2 rounded-xs px-4 py-2 pl-2 hover:bg-slate-300"
+                className="flex flex-grow cursor-pointer gap-2 rounded-sm px-4 py-2 pl-2 hover:bg-slate-300"
               >
                 <ItemIndicator className="text-sm">
                   <CheckIcon size={20} />
@@ -70,7 +70,7 @@ export function EditableList({
           <div className="flex gap-2">
             <input
               placeholder="新規追加"
-              className="rounded-xs px-2 py-1"
+              className="rounded-sm px-2 py-1"
               onChange={(e) => setAddData(e.target.value)}
             />
             <button

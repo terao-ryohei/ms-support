@@ -4,7 +4,7 @@ import { createFactory } from "hono/factory";
 import { z } from "@hono/zod-openapi";
 import { zValidator } from "@hono/zod-validator";
 import { calcComma } from "~/utils/price";
-import type { CalcType } from "~/utils/calcPrice";
+import type { CalcType } from "~/types/calcType";
 
 export type RoundType = "round" | "ceil" | "floor";
 
