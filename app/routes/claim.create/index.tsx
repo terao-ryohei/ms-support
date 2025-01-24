@@ -3,7 +3,7 @@ import { InputWrapper } from "~/components/input/inputWrapper";
 import { Select } from "~/components/input/select";
 import { LeftData } from "~/layouts/leftData";
 import { contractLoader } from "./loader";
-import { useHook } from "./useHook";
+import { useHook } from "./useHooks";
 
 export const loader = contractLoader;
 
