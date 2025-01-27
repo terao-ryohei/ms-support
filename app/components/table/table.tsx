@@ -7,10 +7,10 @@ import {
 
 const Table = forwardRef<HTMLTableElement, HTMLAttributes<HTMLTableElement>>(
   ({ className, ...props }, ref) => (
-    <div className="w-full">
+    <div className="mx-auto w-full min-w-[800px] overflow-auto overscroll-x-contain rounded-md border border-muted">
       <table
         ref={ref}
-        className={`w-full caption-bottom text-sm ${className}`}
+        className={`h-[80%] w-[90%] caption-bottom overflow-y-auto text-sm ${className}`}
         {...props}
       />
     </div>
@@ -32,7 +32,7 @@ const TableBody = forwardRef<
 >(({ className, ...props }, ref) => (
   <tbody
     ref={ref}
-    className={`[&_tr:last-child]:border-0 ${className}`}
+    className={`overflow-y-auto [&_tr:last-child]:border-0 ${className}`}
     {...props}
   />
 ));
@@ -56,7 +56,7 @@ const TableRow = forwardRef<
 >(({ className, ...props }, ref) => (
   <tr
     ref={ref}
-    className={`border-b transition-colors even:bg-muted/50 hover:bg-muted/100 data-[state=selected]:bg-muted ${className}`}
+    className={`border-b border-b-gray-200 transition-colors even:bg-muted/50 hover:bg-muted/100 data-[state=selected]:bg-muted ${className}`}
     {...props}
   />
 ));

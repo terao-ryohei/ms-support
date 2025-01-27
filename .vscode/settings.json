@@ -1,3 +1,14 @@
 {
-  "cSpell.words": ["isbot", "RDPC"]
+  "cSpell.words": [
+    "bcryptjs",
+    "biomejs",
+    "clsx",
+    "exceljs",
+    "hono",
+    "isbot",
+    "lucide",
+    "RDPC",
+    "tanstack",
+    "VITE"
+  ]
 }

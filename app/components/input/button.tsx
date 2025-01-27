@@ -5,6 +5,7 @@ export function Button({
   props,
   className,
   children,
+  type = "primary",
 }: {
   props?: DetailedHTMLProps<
     ButtonHTMLAttributes<HTMLButtonElement>,
@@ -12,11 +13,16 @@ export function Button({
   >;
   children: ReactNode;
   className?: string;
+  type?: "primary" | "secondary";
 }) {
   return (
     <button
       className={cn(
-        "mt-5 h-14 rounded-md bg-secondary px-4 py-2 font-bold text-secondary-foreground shadow-md hover:bg-secondary-hover",
+        "cursor-pointer rounded-md px-4 py-2",
+        type === "primary" &&
+          "bg-secondary font-bold text-secondary-foreground shadow-md hover:bg-secondary-hover",
+        type === "secondary" &&
+          "border border-gray-500 bg-white text-gray-500 hover:bg-gray-200",
         className,
       )}
       {...props}

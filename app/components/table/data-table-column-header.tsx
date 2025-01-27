@@ -10,7 +10,7 @@ export function DraggableTableHeader<TData>({
   data,
 }: {
   header: Header<TData, unknown>;
-  className: string;
+  className?: string;
   data: string;
 }) {
   const { column } = header;
@@ -32,7 +32,7 @@ export function DraggableTableHeader<TData>({
       colSpan={header.colSpan}
       ref={setNodeRef}
       style={style}
-      className={`relative whitespace-nowrap text-center [transition:width_transform_0.2s_ease-in-out] ${className}`}
+      className={`relative whitespace-nowrap border-gray-400 border-b border-solid text-center [transition:width_transform_0.2s_ease-in-out] ${className}`}
     >
       <span className="relative">
         {header.id !== "select-col" && (

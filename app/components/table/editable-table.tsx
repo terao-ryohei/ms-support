@@ -10,6 +10,13 @@ import {
 import { DraggableTableHeader } from "./data-table-column-header";
 import { DragAlongCell } from "./drag-along-cell";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "./table";
+import { Button } from "../input/button";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "./dropdown-menu";
 
 export function EditableTable<T, U>({
   columns,
@@ -23,8 +30,42 @@ export function EditableTable<T, U>({
   columnOrder: string[];
 }) {
   return (
-    <div className="mx-auto h-full w-full min-w-[800px] flex-grow overflow-auto overscroll-x-contain rounded-md border border-muted">
-      <Table className="h-[80%] w-[90%] overflow-y-auto">
+    <div className="flex h-full flex-col space-y-4">
+      <div className="flex justify-end gap-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="cursor-pointer rounded-sm border border-gray-400 px-2 text-gray-600 hover:bg-gray-200"
+            >
+              表示する列を選択する
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {table
+              .getAllColumns()
+              .filter(
+                (column) =>
+                  column.getCanHide() &&
+                  Object.keys(headerList).includes(column.id),
+              )
+              .map((column) => (
+                <DropdownMenuCheckboxItem
+                  key={column.id}
+                  className="capitalize"
+                  checked={column.getIsVisible()}
+                  onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                >
+                  {headerList[column.id as keyof typeof headerList]}
+                </DropdownMenuCheckboxItem>
+              ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <Button props={{ onClick: table.options.meta?.addRow, type: "button" }}>
+          新しい行を追加する
+        </Button>
+      </div>
+      <Table>
         <TableHeader>
           <SortableContext
             items={columnOrder}
@@ -40,14 +81,13 @@ export function EditableTable<T, U>({
                     key={header.id}
                     header={header}
                     data={headerList[header.id as keyof typeof headerList]}
-                    className="border-gray-200 border-b border-solid"
                   />
                 ))}
               </TableRow>
             ))}
           </SortableContext>
         </TableHeader>
-        <TableBody className="overflow-y-auto">
+        <TableBody>
           {table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row) => (
               <TableRow
@@ -57,10 +97,7 @@ export function EditableTable<T, U>({
                 {row.getVisibleCells().map((cell) => {
                   const { id, column, getContext } = cell;
                   return column.getIsPinned() === "left" ? (
-                    <TableCell
-                      key={id}
-                      className="border-b border-solid bg-white"
-                    >
+                    <TableCell key={id}>
                       {flexRender(column.columnDef.cell, getContext())}
                     </TableCell>
                   ) : (
@@ -77,7 +114,7 @@ export function EditableTable<T, U>({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center">
+              <TableCell colSpan={columns.length} className="h-24">
                 データがありません
               </TableCell>
             </TableRow>
