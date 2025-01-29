@@ -20,9 +20,6 @@ export type ClaimValues = {
   OtherPrice: number; // その他金額
   Sales: string; // 営業担当
   Initial: string; // イニシャル
-  Affiliate: string; // 関連会社名
-  Note: string; // 備考
-  Note2: string; // 備考2
   WorkTime: number; // 作業時間
   OverTime: number; // 超過時間
   UnderTime: number; // 控除時間
@@ -51,9 +48,6 @@ export const createClaim = factory.createHandlers(
       OtherPrice: z.number(), // その他金額
       Sales: z.string(), // 営業担当
       Initial: z.string(), // イニシャル
-      Affiliate: z.string(), // 関連会社名
-      Note: z.string(), // 備考
-      Note2: z.string(), // 備考2
       WorkTime: z.number(), // 作業時間
       OverTime: z.number(), // 超過時間
       UnderTime: z.number(), // 控除時間
@@ -87,7 +81,6 @@ export const createClaim = factory.createHandlers(
       await workbook.xlsx.load(buffer);
 
       const sheet1 = workbook.worksheets[0];
-      // const sheet2 = workbook.worksheets[1];
 
       const image = workbook.addImage({
         base64:
@@ -154,18 +147,6 @@ export const createClaim = factory.createHandlers(
         sheet1.getCell("G27").value = "";
       }
 
-      // シート2の値を設定
-      // sheet2.getCell("B6").value = values.Company;
-      // sheet2.getCell("B14").value = values.Affiliate;
-
-      // sheet2.getCell("B15").value =
-      //   `${dtYear}年${ClaimFromMonth}月${ClaimFromDay}日～${dtYear}年${ClaimToMonth}月${ClaimToDay}日`;
-
-      // sheet2.getCell("B16").value =
-      //   `${values.Worker}（${values.PaidFrom}h-${values.PaidTo}h）`;
-      // sheet2.getCell("A7").value = values.Note;
-      // sheet2.getCell("A20").value = values.Note2;
-
       // シート1の請求詳細
       sheet1.getCell("C25").value = values.WorkTime;
       sheet1.getCell("C26").value =
@@ -185,29 +166,6 @@ export const createClaim = factory.createHandlers(
         values.isHour || values.isFixed ? "" : values.OverPrice;
       sheet1.getCell("F27").value =
         values.isHour || values.isFixed ? "" : values.UnderPrice * -1;
-
-      // シート2の請求詳細
-      // sheet2.getCell("C16").value = values.WorkTime;
-      // sheet2.getCell("C17").value = values.OverTime;
-      // sheet2.getCell("C18").value = values.UnderTime;
-      // sheet2.getCell("E16").value = values.WorkPrice;
-      // sheet2.getCell("F17").value = calculatePrice(
-      //   Number(values.WorkPrice),
-      //   values.PaidTo,
-      //   values.RoundType,
-      // );
-      // sheet2.getCell("F18").value =
-      //   calculatePrice(
-      //     Number(values.WorkPrice),
-      //     values.PaidFrom,
-      //     values.RoundType,
-      //   ) * -1;
-      // sheet2.getCell("G16").value =
-      //   Number(values.WorkTime) * Number(values.WorkPrice);
-      // sheet2.getCell("G17").value =
-      //   Number(values.OverTime) * Number(sheet2.getCell("F17").value);
-      // sheet2.getCell("G18").value =
-      //   Number(values.UnderTime) * Number(sheet2.getCell("F18").value);
 
       const excelBuffer = await workbook.xlsx.writeBuffer();
 

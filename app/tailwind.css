@@ -90,3 +90,7 @@ select {
     background: #ccc;
   }
 }
+
+button {
+  cursor: pointer;
+}

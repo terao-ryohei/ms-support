@@ -35,10 +35,12 @@ export function DraggableTableHeader<TData>({
       className={`relative whitespace-nowrap border-gray-400 border-b border-solid text-center [transition:width_transform_0.2s_ease-in-out] ${className}`}
     >
       <span className="relative">
-        {header.id !== "select-col" && (
-          <button className="cursor-grab" {...attributes} {...listeners}>
+        {header.id !== "selectCol" ? (
+          <button className="cursor-grab!" {...attributes} {...listeners}>
             {data ? data : "🟰"}
           </button>
+        ) : (
+          <>{"一括選択"}</>
         )}
       </span>
       {column.getCanFilter() &&
@@ -56,7 +58,7 @@ export function DraggableTableHeader<TData>({
             {header.id !== "remove" &&
               header.id !== "claim" &&
               header.id !== "order" &&
-              header.id !== "select-col" && (
+              header.id !== "selectCol" && (
                 <div className="flex flex-col justify-center rounded-md text-xs">
                   <button
                     className="rounded-t-md bg-white pl-0"

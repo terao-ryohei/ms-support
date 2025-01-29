@@ -76,7 +76,7 @@ export const useHooks = () => {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [columnOrder, setColumnOrder] = useState<string[]>([
-    "select-col",
+    "selectCol",
     "claim",
     ...Object.keys(translatedArray),
   ]);
@@ -120,7 +120,7 @@ export const useHooks = () => {
   const columns: ColumnDef<ContractData>[] = useMemo(
     () => [
       {
-        id: "select-col",
+        id: "selectCol",
         cell: ({ row }) => (
           <input
             type="checkbox"

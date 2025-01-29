@@ -38,7 +38,7 @@ export default function Index() {
       <InputWrapper
         input={
           <Input
-            register={register("Initial")}
+            register={register("Subject")}
             props={{
               placeholder: "開発業務",
             }}
