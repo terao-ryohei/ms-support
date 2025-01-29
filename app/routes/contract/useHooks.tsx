@@ -50,11 +50,15 @@ export const translatedArray = {
   orderPrice: "出単価",
   profit: "粗利",
   profitRatio: "粗利率",
+  claimIsHour: "入時給",
+  claimIsFixed: "入固定",
   claimPaidTo: "入清算上限",
   claimPaidFrom: "入清算下限",
   claimRoundType: "入丸めタイプ",
   claimRoundDigit: "入丸め桁",
   claimPeriodDate: "入金期日",
+  orderIsHour: "出時給",
+  orderIsFixed: "出固定",
   orderPaidTo: "出清算上限",
   orderPaidFrom: "出清算下限",
   orderRoundType: "出丸めタイプ",
@@ -86,6 +90,10 @@ export const useHooks = () => {
       orderRoundDigit: data.orderPayment.roundDigit,
       claimPeriodDate: data.claimPayment.periodDate,
       orderPeriodDate: data.orderPayment.periodDate,
+      claimIsHour: data.claimPayment.isHour,
+      claimIsFixed: data.claimPayment.isFixed,
+      orderIsHour: data.orderPayment.isHour,
+      orderIsFixed: data.orderPayment.isFixed,
     })),
   );
   const [salesList, setSalesList] = useState<typeof salesData>(salesData);
@@ -583,6 +591,10 @@ export const useHooks = () => {
           orderRoundDigit: data.orderPayment.roundDigit,
           claimPeriodDate: data.claimPayment.periodDate,
           orderPeriodDate: data.orderPayment.periodDate,
+          orderIsHour: data.orderPayment.isHour,
+          orderIsFixed: data.orderPayment.isFixed,
+          claimIsHour: data.claimPayment.isHour,
+          claimIsFixed: data.claimPayment.isFixed,
         })),
       );
     });

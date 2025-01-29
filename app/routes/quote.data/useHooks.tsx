@@ -41,8 +41,8 @@ import type { loader } from ".";
 
 export const translatedArray = {
   id: "契約ID",
-  isHour: "時給計算",
-  isFixed: "固定清算",
+  isHour: "時給",
+  isFixed: "固定",
   worker: "作業従事者",
   company: "見積先企業",
   sales: "客先営業担当者",
