@@ -281,7 +281,7 @@ export const useHooks = () => {
                       client.api.relation.$put({
                         json: {
                           id: data[c.row.index].id,
-                          mode: "partner",
+                          mode: "all",
                           type: "workerId",
                           value: Number(value),
                         },
