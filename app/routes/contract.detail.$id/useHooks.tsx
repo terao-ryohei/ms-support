@@ -1,7 +1,6 @@
 import { useLoaderData } from "@remix-run/react";
 import { useState, useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
-import { defaultData } from "~/constants/default";
 import { calcPrice } from "~/utils/calcPrice";
 import type { loader } from ".";
 import type { AppType } from "server";
@@ -16,29 +15,29 @@ export const useHooks = () => {
 
   const { register, control, setValue, getValues } = useForm({
     defaultValues: {
-      ClaimPeriod: defaultData.periodDate,
-      ClaimPaidFrom: defaultData.paidFrom,
-      ClaimPaidTo: defaultData.paidTo,
-      ClaimWorkPrice: defaultData.workPrice,
-      ClaimCalcType: defaultData.calcType,
-      ClaimRoundType: defaultData.roundType,
-      ClaimPayType: defaultData.payType,
-      ClaimRoundDigit: defaultData.roundDigit,
-      ClaimOverPrice: defaultData.overPrice,
-      ClaimUnderPrice: defaultData.underPrice,
-      OrderPeriod: defaultData.periodDate,
-      OrderPaidFrom: defaultData.paidFrom,
-      OrderPaidTo: defaultData.paidTo,
-      OrderWorkPrice: defaultData.workPrice,
-      OrderCalcType: defaultData.calcType,
-      OrderRoundType: defaultData.roundType,
-      OrderPayType: defaultData.payType,
-      OrderRoundDigit: defaultData.roundDigit,
-      OrderOverPrice: defaultData.overPrice,
-      OrderUnderPrice: defaultData.underPrice,
-      Subject: defaultData.subject,
-      Document: defaultData.document,
-      ContractType: defaultData.contractType,
+      ClaimPeriod: contractData.claimPayment.periodDate,
+      ClaimPaidFrom: contractData.claimPayment.paidFrom,
+      ClaimPaidTo: contractData.claimPayment.paidTo,
+      ClaimWorkPrice: contractData.claimPayment.workPrice,
+      ClaimCalcType: contractData.claimPayment.calcType,
+      ClaimRoundType: contractData.claimPayment.roundType,
+      ClaimPayType: contractData.claimPayment.payType,
+      ClaimRoundDigit: contractData.claimPayment.roundDigit,
+      ClaimOverPrice: contractData.claimPayment.overPrice,
+      ClaimUnderPrice: contractData.claimPayment.underPrice,
+      OrderPeriod: contractData.orderPayment.periodDate,
+      OrderPaidFrom: contractData.orderPayment.paidFrom,
+      OrderPaidTo: contractData.orderPayment.paidTo,
+      OrderWorkPrice: contractData.orderPayment.workPrice,
+      OrderCalcType: contractData.orderPayment.calcType,
+      OrderRoundType: contractData.orderPayment.roundType,
+      OrderPayType: contractData.orderPayment.payType,
+      OrderRoundDigit: contractData.orderPayment.roundDigit,
+      OrderOverPrice: contractData.orderPayment.overPrice,
+      OrderUnderPrice: contractData.orderPayment.underPrice,
+      Subject: contractData.subject,
+      Document: contractData.document,
+      ContractType: contractData.contractType,
     },
   });
 
@@ -54,7 +53,9 @@ export const useHooks = () => {
     order: 1,
   });
   const [worker, setWorker] = useState(1);
-  const [contractRange, setContractRange] = useState(defaultData.contractRange);
+  const [contractRange, setContractRange] = useState(
+    contractData.orderPayment.contractRange,
+  );
 
   const {
     ClaimWorkPrice = 0,
@@ -112,8 +113,11 @@ export const useHooks = () => {
     setValue,
   ]);
 
-  const onChangeSales = (value: string) => {
+  const onChangeClaimSales = (value: string) => {
     setSales((data) => ({ ...data, claim: Number(value) }));
+  };
+  const onChangeOrderSales = (value: string) => {
+    setSales((data) => ({ ...data, order: Number(value) }));
   };
 
   const onAddSales = async (value: string) => {
@@ -127,7 +131,10 @@ export const useHooks = () => {
     setSalesList((list) => [...list, ...res]);
   };
 
-  const onChangeCompanies = (value: string) => {
+  const onChangeClaimCompanies = (value: string) => {
+    setCompany((data) => ({ ...data, claim: Number(value) }));
+  };
+  const onChangeOrderCompanies = (value: string) => {
     setCompany((data) => ({ ...data, order: Number(value) }));
   };
 
@@ -174,8 +181,10 @@ export const useHooks = () => {
     salesList,
     companyList,
     register,
-    onChangeSales,
-    onChangeCompanies,
+    onChangeClaimCompanies,
+    onChangeOrderCompanies,
+    onChangeClaimSales,
+    onChangeOrderSales,
     onChangeWorkers,
     onAddSales,
     onAddCompanies,

@@ -58,8 +58,10 @@ export default function Index() {
     salesList,
     companyList,
     register,
-    onChangeSales,
-    onChangeCompanies,
+    onChangeClaimCompanies,
+    onChangeOrderCompanies,
+    onChangeClaimSales,
+    onChangeOrderSales,
     onChangeWorkers,
     onAddSales,
     onAddCompanies,
@@ -114,7 +116,7 @@ export default function Index() {
             className="h-full w-full"
             data={salesList}
             value={sales.order}
-            onChange={onChangeSales}
+            onChange={onChangeOrderSales}
             onAdd={onAddSales}
           />
         </div>
@@ -126,7 +128,7 @@ export default function Index() {
             className="h-full w-full"
             data={salesList}
             value={sales.claim}
-            onChange={onChangeSales}
+            onChange={onChangeClaimSales}
             onAdd={onAddSales}
           />
         </div>
@@ -140,7 +142,7 @@ export default function Index() {
             className="h-full w-full"
             data={companyList}
             value={company.order}
-            onChange={onChangeCompanies}
+            onChange={onChangeOrderCompanies}
             onAdd={onAddCompanies}
           />
         </div>
@@ -152,7 +154,7 @@ export default function Index() {
             className="h-full w-full"
             data={companyList}
             value={company.claim}
-            onChange={onChangeCompanies}
+            onChange={onChangeClaimCompanies}
             onAdd={onAddCompanies}
           />
         </div>
@@ -169,21 +171,6 @@ export default function Index() {
         </div>
       </div>
       <div className="mb-2 ml-2 font-bold">請求情報</div>
-      <div className="mx-2 flex">
-        <div className="flex w-full grow items-center border border-gray-300 border-b-0 border-solid">
-          <div className="flex h-14 w-40 items-center justify-center bg-[#fde8ff]">
-            {translatedArray.claimContractRange}
-          </div>
-          <DateRangePicker
-            className="h-[90%]"
-            initialDateFrom={new Date(defaultData.contractRange.split("~")[0])}
-            initialDateTo={new Date(defaultData.contractRange.split("~")[1])}
-            onUpdate={({ range }) => {
-              onChangeDate({ range, type: "claim" });
-            }}
-          />
-        </div>
-      </div>
       <div className="mx-2 flex">
         <div className="flex w-full grow border border-gray-300 border-b-0 border-solid">
           <div className="flex h-14 w-40 items-center justify-center bg-[#fde8ff]">

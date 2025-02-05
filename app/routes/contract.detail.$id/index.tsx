@@ -33,6 +33,7 @@ export const translatedArray = {
   claimCompany: "顧客",
   orderCompany: "所属",
   subject: "案件名",
+  document: "成果物",
   profit: "粗利",
   profitRatio: "粗利率",
   payment: {
@@ -65,8 +66,10 @@ export default function Index() {
     salesList,
     companyList,
     register,
-    onChangeSales,
-    onChangeCompanies,
+    onChangeClaimCompanies,
+    onChangeOrderCompanies,
+    onChangeClaimSales,
+    onChangeOrderSales,
     onChangeWorkers,
     onAddSales,
     onAddCompanies,
@@ -123,7 +126,7 @@ export default function Index() {
             className="h-full w-full"
             data={salesList}
             value={contractData.orderSalesId}
-            onChange={onChangeSales}
+            onChange={onChangeOrderSales}
             onAdd={onAddSales}
           />
         </div>
@@ -135,7 +138,7 @@ export default function Index() {
             className="h-full w-full"
             data={salesList}
             value={contractData.claimSalesId}
-            onChange={onChangeSales}
+            onChange={onChangeClaimSales}
             onAdd={onAddSales}
           />
         </div>
@@ -149,7 +152,7 @@ export default function Index() {
             className="h-full w-full"
             data={companyList}
             value={contractData.orderCompanyId}
-            onChange={onChangeCompanies}
+            onChange={onChangeOrderCompanies}
             onAdd={onAddCompanies}
           />
         </div>
@@ -161,7 +164,7 @@ export default function Index() {
             className="h-full w-full"
             data={companyList}
             value={contractData.claimCompanyId}
-            onChange={onChangeCompanies}
+            onChange={onChangeClaimCompanies}
             onAdd={onAddCompanies}
           />
         </div>
@@ -176,25 +179,17 @@ export default function Index() {
             {...register("Subject", { required: true })}
           />
         </div>
-      </div>
-      <div className="mb-2 ml-2 font-bold">請求情報</div>
-      <div className="mx-2 flex">
-        <div className="flex w-full grow items-center border border-gray-300 border-b-0 border-solid">
-          <div className="flex h-14 w-40 items-center justify-center bg-[#fde8ff]">
-            {translatedArray.claimContractRange}
+        <div className="flex w-full grow border border-gray-300 border-l-0 border-solid">
+          <div className="flex h-14 w-40 items-center justify-center bg-[#e0ffe0]">
+            {translatedArray.document}
           </div>
-          <DateRangePicker
-            className="h-[90%]"
-            initialDateFrom={
-              new Date(contractData.claimPayment.contractRange.split("~")[0])
-            }
-            initialDateTo={
-              new Date(contractData.claimPayment.contractRange.split("~")[1])
-            }
-            onUpdate={onChangeDate}
+          <input
+            className="w-full rounded-md p-2 text-sm"
+            {...register("Document", { required: true })}
           />
         </div>
       </div>
+      <div className="mb-2 ml-2 font-bold">請求情報</div>
       <div className="mx-2 flex">
         <div className="flex w-full grow border border-gray-300 border-b-0 border-solid">
           <div className="flex h-14 w-40 items-center justify-center bg-[#fde8ff]">
@@ -319,7 +314,7 @@ export default function Index() {
       <div className="mx-2 flex">
         <div className="flex w-full grow items-center border border-gray-300 border-b-0 border-solid">
           <div className="flex h-14 w-40 items-center justify-center bg-[#fff0ce]">
-            {translatedArray.claimContractRange}
+            {translatedArray.orderContractRange}
           </div>
           <DateRangePicker
             className="h-[90%]"

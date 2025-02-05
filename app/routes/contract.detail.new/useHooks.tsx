@@ -117,8 +117,11 @@ export const useHooks = () => {
     setValue,
   ]);
 
-  const onChangeSales = (value: string) => {
+  const onChangeClaimSales = (value: string) => {
     setSales((data) => ({ ...data, claim: Number(value) }));
+  };
+  const onChangeOrderSales = (value: string) => {
+    setSales((data) => ({ ...data, order: Number(value) }));
   };
 
   const onAddSales = async (value: string) => {
@@ -132,7 +135,10 @@ export const useHooks = () => {
     setSalesList((list) => [...list, ...res]);
   };
 
-  const onChangeCompanies = (value: string) => {
+  const onChangeClaimCompanies = (value: string) => {
+    setCompany((data) => ({ ...data, claim: Number(value) }));
+  };
+  const onChangeOrderCompanies = (value: string) => {
     setCompany((data) => ({ ...data, order: Number(value) }));
   };
 
@@ -184,8 +190,10 @@ export const useHooks = () => {
     salesList,
     companyList,
     register,
-    onChangeSales,
-    onChangeCompanies,
+    onChangeClaimCompanies,
+    onChangeOrderCompanies,
+    onChangeClaimSales,
+    onChangeOrderSales,
     onChangeWorkers,
     onAddSales,
     onAddCompanies,

@@ -199,59 +199,82 @@ export const postContractAndPayment = factory.createHandlers(
       isDisable: false,
     };
 
-    const newContract = await dbClient(c.env.DB)
-      .insert(contract)
-      .values([{ ...contractReq }])
-      .returning();
-
-    const newPayment = await dbClient(c.env.DB)
-      .insert(payment)
-      .values([
-        {
-          ...claimPayment,
-          from: new Date(claimPayment.from),
-          to: new Date(claimPayment.to),
-          isDisable: false,
-        },
-      ])
-      .returning();
-
-    const newPayment2 = await dbClient(c.env.DB)
-      .insert(payment)
-      .values([
-        {
-          ...orderPayment,
-          from: new Date(orderPayment.from),
-          to: new Date(orderPayment.to),
-          isDisable: false,
-        },
-      ])
-      .returning();
-
-    await dbClient(c.env.DB)
-      .insert(workersRelation)
-      .values([
-        {
-          contractId: newContract[0].id,
-          paymentId: newPayment[0].id,
-          workerId,
-          salesId: claimSalesId,
-          companyId: claimCompanyId,
-          type: "customer",
-        },
+    const { newContract, newPayment } = await Promise.all([
+      await dbClient(c.env.DB)
+        .insert(contract)
+        .values([{ ...contractReq }])
+        .returning(),
+      await dbClient(c.env.DB)
+        .insert(payment)
+        .values([
+          {
+            ...claimPayment,
+            from: new Date(claimPayment.from),
+            to: new Date(claimPayment.to),
+            isDisable: false,
+          },
+        ])
+        .returning(),
+      await dbClient(c.env.DB)
+        .insert(payment)
+        .values([
+          {
+            ...orderPayment,
+            from: new Date(orderPayment.from),
+            to: new Date(orderPayment.to),
+            isDisable: false,
+          },
+        ])
+        .returning(),
+    ]).then(async ([newContract, newPayment, newPayment2]) => {
+      console.log({
+        contractId: newContract[0].id,
+        paymentId: newPayment[0].id,
+        workerId,
+        salesId: claimSalesId,
+        companyId: claimCompanyId,
+        type: "customer",
+      });
+      console.log({
+        contractId: newContract[0].id,
+        paymentId: newPayment2[0].id,
+        workerId,
+        salesId: orderSalesId,
+        companyId: orderCompanyId,
+        type: "partner",
+      });
+      await Promise.all([
+        await dbClient(c.env.DB)
+          .insert(workersRelation)
+          .values([
+            {
+              contractId: newContract[0].id,
+              paymentId: newPayment[0].id,
+              workerId,
+              salesId: claimSalesId,
+              companyId: claimCompanyId,
+              type: "customer",
+            },
+          ]),
+        await dbClient(c.env.DB)
+          .insert(workersRelation)
+          .values([
+            {
+              contractId: newContract[0].id,
+              paymentId: newPayment2[0].id,
+              workerId,
+              salesId: orderSalesId,
+              companyId: orderCompanyId,
+              type: "partner",
+            },
+          ]),
       ]);
-    await dbClient(c.env.DB)
-      .insert(workersRelation)
-      .values([
-        {
-          contractId: newContract[0].id,
-          paymentId: newPayment2[0].id,
-          workerId,
-          salesId: orderSalesId,
-          companyId: orderCompanyId,
-          type: "partner",
-        },
-      ]);
+
+      return {
+        newContract,
+        newPayment,
+      };
+    });
 
     return c.json({ id: newContract[0].id, paymentId: newPayment[0].id });
   },
