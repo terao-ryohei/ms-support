@@ -1,6 +1,7 @@
 import type { CalcType } from "~/types/calcType";
 import { datePipe } from "../utils/datePipe";
 import type { RoundType } from "~/types/roundType";
+import type { PayType } from "~/types/payType";
 
 export const defaultData: {
   id: number;
@@ -13,7 +14,7 @@ export const defaultData: {
   contractType: string;
   subject: string;
   document: string;
-  isHour: boolean;
+  payType: PayType;
   periodDate: string;
   workPrice: number;
   roundDigit: number;
@@ -24,7 +25,6 @@ export const defaultData: {
   workerId: number;
   salesId: number;
   companyId: number;
-  isFixed: boolean;
 } = {
   id: 0,
   worker: "",
@@ -36,7 +36,6 @@ export const defaultData: {
   contractType: "準委任契約",
   subject: "",
   document: "作業報告書",
-  isHour: false,
   periodDate: "",
   workPrice: 500000,
   roundDigit: 1,
@@ -47,7 +46,7 @@ export const defaultData: {
   workerId: 0,
   salesId: 0,
   companyId: 0,
-  isFixed: false,
+  payType: "month",
 };
 
 const today = new Date();

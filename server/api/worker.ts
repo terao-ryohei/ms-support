@@ -28,30 +28,40 @@ export const postWorker = factory.createHandlers(
 
 export const getWorker = factory.createHandlers(async (c) => {
   const workerData = await dbClient(c.env.DB)
-    .select({
-      id: workers.id,
-      name: workers.name,
-    })
+    .select({ id: workers.id, name: workers.name })
     .from(workers)
     .where(eq(workers.isDisable, false))
-    .orderBy(workers.name); // 並び替え
+    .orderBy(workers.id); // 並び替え
 
   return c.json(workerData);
 });
 
-export const deleteWorker = factory.createHandlers(
+export const getWorkerAll = factory.createHandlers(async (c) => {
+  const workerData = await dbClient(c.env.DB)
+    .select()
+    .from(workers)
+    .orderBy(workers.id); // 並び替え
+
+  return c.json(workerData);
+});
+
+export const putWorker = factory.createHandlers(
   zValidator(
     "json",
     z.object({
       id: z.number(),
+      values: z.object({
+        isDisable: z.boolean().optional(),
+        name: z.string().optional(),
+      }),
     }),
   ),
   async (c) => {
-    const { id } = c.req.valid("json");
+    const { id, values } = c.req.valid("json");
 
     const res = await dbClient(c.env.DB)
       .update(workers)
-      .set({ isDisable: true })
+      .set({ ...values })
       .where(eq(workers.id, id));
 
     return c.json(res);

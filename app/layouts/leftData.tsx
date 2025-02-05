@@ -1,8 +1,8 @@
 import type { CalcType } from "~/types/calcType";
+import type { PayType } from "~/types/payType";
 
 export function LeftData({
-  isFixed,
-  isHour,
+  payType,
   sales,
   worker,
   company,
@@ -13,8 +13,7 @@ export function LeftData({
   paidTo,
   calcType,
 }: {
-  isHour: boolean;
-  isFixed: boolean;
+  payType: PayType;
   sales: string;
   company: string;
   worker: string;
@@ -33,14 +32,19 @@ export function LeftData({
 }) {
   return (
     <div className="form-wrap mx-12 flex flex-1 flex-col rounded-lg bg-accent p-5 text-accent-foreground">
-      {isHour && (
+      {payType === "hour" && (
         <h2 className="mb-4 ml-2 font-bold text-3xl underline underline-offset-4">
           時間清算
         </h2>
       )}
-      {isFixed && (
+      {payType === "fixed" && (
         <h2 className="mb-4 ml-2 font-bold text-3xl underline underline-offset-4">
           固定清算
+        </h2>
+      )}
+      {payType === "date" && (
+        <h2 className="mb-4 ml-2 font-bold text-3xl underline underline-offset-4">
+          日当清算
         </h2>
       )}
       <span className="mt-2 mb-2 font-bold text-sm">顧客担当</span>
@@ -55,7 +59,7 @@ export function LeftData({
       <h2 className="mb-2 ml-2 font-bold text-xl underline underline-offset-4">
         {worker}
       </h2>
-      {!isHour && (
+      {payType !== "hour" && (
         <div className="mt-auto">
           <div className="total font-bold text-lg">超過単価:</div>
           <div className="price text-right font-extrabold font-num text-2xl">

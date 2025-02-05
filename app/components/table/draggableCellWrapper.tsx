@@ -4,7 +4,9 @@ import type { CSSProperties } from "react";
 import { TableCell } from "./table";
 import { CSS } from "@dnd-kit/utilities";
 
-export function DragAlongCell<TData>({ cell }: { cell: Cell<TData, unknown> }) {
+export function DraggableCellWrapper<TData>({
+  cell,
+}: { cell: Cell<TData, unknown> }) {
   const { isDragging, setNodeRef, transform } = useSortable({
     id: cell.column.id,
   });

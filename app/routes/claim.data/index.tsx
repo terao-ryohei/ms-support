@@ -3,10 +3,14 @@ import { restrictToHorizontalAxis } from "@dnd-kit/modifiers";
 import { hc } from "hono/client";
 import type { AppType } from "server";
 import { Input } from "~/components/input/input";
-import { EditableTable } from "~/components/table/editable-table";
+import { EditableTable } from "~/components/table/editableTable";
 import { translatedArray, useHooks } from "./useHooks";
 import { onSubmit } from "./submit";
 import type { RoundType } from "~/types/roundType";
+import { DateRangePicker } from "~/components/date-picker/date-range-picker";
+import { addDays, addMonths, setDate } from "date-fns";
+import { useState } from "react";
+import { datePipe } from "~/utils/datePipe";
 
 const client = hc<AppType>(import.meta.env.VITE_API_URL);
 
@@ -34,6 +38,11 @@ export default function Index() {
     getValues,
   } = useHooks();
 
+  const [dateRange, setDateRange] = useState({
+    from: datePipe(setDate(new Date(), 1)),
+    to: datePipe(addDays(addMonths(setDate(new Date(), 1), 1), -1)),
+  });
+
   const onClick = async () => {
     for (const row of table.getSelectedRowModel().rows) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -42,6 +51,8 @@ export default function Index() {
         roundType: data[row.index].roundType as RoundType,
         roundDigit: data[row.index].roundDigit,
         initial: getValues("initial"),
+        from: dateRange.from,
+        to: dateRange.to,
       });
     }
   };
@@ -61,6 +72,20 @@ export default function Index() {
           columnOrder={columnOrder}
         />
         <div className="flex justify-end gap-2">
+          <div className="flex flex-col gap-3">
+            請求期間
+            <DateRangePicker
+              className="border border-gray-300 border-solid"
+              initialDateFrom={setDate(new Date(), 1)}
+              initialDateTo={addDays(addMonths(setDate(new Date(), 1), 1), -1)}
+              onUpdate={({ range }) => {
+                setDateRange({
+                  from: datePipe(range.from),
+                  to: datePipe(range.to ?? new Date()),
+                });
+              }}
+            />
+          </div>
           <div className="flex flex-col gap-1">
             作成者イニシャル
             <Input

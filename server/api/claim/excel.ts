@@ -29,6 +29,7 @@ export type ClaimValues = {
   RoundType: RoundType; // 丸めのタイプ
   RoundDigit: number; // 丸め桁数
   CalcType: CalcType;
+  OtherItem: string;
 };
 
 const factory = createFactory<Env>();
@@ -57,8 +58,8 @@ export const createClaim = factory.createHandlers(
       RoundType: z.string(), // 丸めのタイプ
       url: z.string(),
       RoundDigit: z.number(),
-      isHour: z.boolean(),
-      isFixed: z.boolean(),
+      payType: z.string(),
+      OtherItem: z.string(),
     }),
   ),
   async (c) => {
@@ -118,15 +119,22 @@ export const createClaim = factory.createHandlers(
         `  ご請求期間：${ClaimFromYear}年${ClaimFromMonth}月${ClaimFromDay}日～${ClaimToYear}年${ClaimToMonth}月${ClaimToDay}日`;
 
       let contractHour = `${values.PaidFrom}h-${values.PaidTo}h`;
-      if (values.isHour) contractHour = "時間清算";
-      if (values.isFixed) contractHour = "固定清算";
+      if (values.payType === "hour") contractHour = "時給清算";
+      if (values.payType === "date") contractHour = "日当清算";
+      if (values.payType === "fixed") contractHour = "固定清算";
 
       sheet1.getCell("A25").value =
         `　　・作業担当者：${values.Worker}（${contractHour}）`;
+      sheet1.getCell("E44").value =
+        values.OtherItem !== "" ? values.OtherItem : "旅費交通費他";
       sheet1.getCell("G44").value = values.OtherPrice;
       sheet1.getCell("F19").value = values.Sales;
 
-      if (values.isHour || values.isFixed) {
+      if (
+        values.payType === "date" ||
+        values.payType === "hour" ||
+        values.payType === "fixed"
+      ) {
         sheet1.getCell("A26").value = "";
         sheet1.getCell("A27").value = "";
         sheet1.getCell("D26").value = "";
@@ -140,22 +148,42 @@ export const createClaim = factory.createHandlers(
       // シート1の請求詳細
       sheet1.getCell("C25").value = values.WorkTime;
       sheet1.getCell("C26").value =
-        values.isHour || values.isFixed ? "" : values.OverTime;
+        values.payType === "date" ||
+        values.payType === "hour" ||
+        values.payType === "fixed"
+          ? ""
+          : values.OverTime;
       sheet1.getCell("C27").value =
-        values.isHour || values.isFixed ? "" : values.UnderTime;
+        values.payType === "date" ||
+        values.payType === "hour" ||
+        values.payType === "fixed"
+          ? ""
+          : values.UnderTime;
       sheet1.getCell("A26").value =
-        values.isHour || values.isFixed
+        values.payType === "date" ||
+        values.payType === "hour" ||
+        values.payType === "fixed"
           ? ""
           : `　　　　超過(${calcComma(values.WorkPrice)}円÷${values.PaidTo}h≒${calcComma(values.OverPrice)}円)`;
       sheet1.getCell("A27").value =
-        values.isHour || values.isFixed
+        values.payType === "date" ||
+        values.payType === "hour" ||
+        values.payType === "fixed"
           ? ""
           : `　　　　控除(${calcComma(values.WorkPrice)}円÷${values.PaidFrom}h≒${calcComma(values.UnderPrice)}円)`;
       sheet1.getCell("E25").value = values.WorkPrice;
       sheet1.getCell("F26").value =
-        values.isHour || values.isFixed ? "" : values.OverPrice;
+        values.payType === "date" ||
+        values.payType === "hour" ||
+        values.payType === "fixed"
+          ? ""
+          : values.OverPrice;
       sheet1.getCell("F27").value =
-        values.isHour || values.isFixed ? "" : values.UnderPrice * -1;
+        values.payType === "date" ||
+        values.payType === "hour" ||
+        values.payType === "fixed"
+          ? ""
+          : values.UnderPrice * -1;
 
       const excelBuffer = await workbook.xlsx.writeBuffer();
 

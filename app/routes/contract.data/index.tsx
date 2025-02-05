@@ -2,7 +2,7 @@ import { DndContext, closestCenter } from "@dnd-kit/core";
 import { restrictToHorizontalAxis } from "@dnd-kit/modifiers";
 import { hc } from "hono/client";
 import type { AppType } from "server";
-import { EditableTable } from "~/components/table/editable-table";
+import { EditableTable } from "~/components/table/editableTable";
 import { translatedArray, useHooks } from "./useHooks";
 
 const client = hc<AppType>(import.meta.env.VITE_API_URL);

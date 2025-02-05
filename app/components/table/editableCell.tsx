@@ -64,8 +64,31 @@ export function EditableCell<T>({
         value={value as string}
       >
         <option value="highLow">上下割</option>
-        <option value="center">中央割</option>
+        <option value="center">中間割</option>
         <option value="other">その他</option>
+      </select>
+    );
+  }
+
+  if (
+    column.id === "claimPayType" ||
+    column.id === "orderPayType" ||
+    column.id === "payType"
+  ) {
+    return (
+      <select
+        style={{ width: column.getSize() }}
+        className="rounded-sm px-2 py-1"
+        onChange={(e) => {
+          setValue(e.target.value);
+        }}
+        onBlur={onBlur}
+        value={value as string}
+      >
+        <option value="month">通常</option>
+        <option value="date">日当</option>
+        <option value="hour">時給</option>
+        <option value="fixed">固定</option>
       </select>
     );
   }
@@ -119,7 +142,10 @@ export function EditableCell<T>({
         );
       }
       if (
-        /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/.test(String(data))
+        /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/.test(String(data)) &&
+        column.id !== "periodDate" &&
+        column.id !== "claimPeriodDate" &&
+        column.id !== "orderPeriodDate"
       ) {
         return (
           <input

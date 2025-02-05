@@ -53,8 +53,7 @@ export const createOrder = factory.createHandlers(
       RoundType: z.string(), // 丸めのタイプ
       url: z.string(),
       RoundDigit: z.number(),
-      isHour: z.boolean(),
-      isFixed: z.boolean(),
+      payType: z.string(),
       CalcType: z.string(),
     }),
   ),
@@ -104,14 +103,17 @@ export const createOrder = factory.createHandlers(
       sheet1.getCell("B27").value = values.Worker;
 
       let contractHour = `${values.PaidFrom}ｈ～${values.PaidTo}ｈ`;
-      if (values.isHour) contractHour = "時間清算";
-      if (values.isFixed) contractHour = "固定清算";
+      if (values.payType === "hour") contractHour = "時間清算";
+      if (values.payType === "fixed") contractHour = "固定清算";
+      if (values.payType === "date") contractHour = "日当清算";
 
       sheet1.getCell("F27").value = `(${contractHour})`;
-      sheet1.getCell("C34").value =
-        values.isHour || values.isFixed
-          ? ""
-          : `基準時間を${values.PaidFrom}h～${values.PaidTo}hとし、稼働時間の過不足は、`;
+
+      let payMethod = `基準時間を${values.PaidFrom}h～${values.PaidTo}hとし、稼働時間の過不足単価は、`;
+      if (values.payType === "fixed") payMethod = "固定清算とします。";
+      if (values.payType === "date") payMethod = "日当清算とします。";
+      if (values.payType === "hour") payMethod = "時給清算とします。";
+      sheet1.getCell("C34").value = payMethod;
 
       let roundType = "四捨五入";
       if (values.RoundType === "cail") roundType = "切上げ";
@@ -122,10 +124,21 @@ export const createOrder = factory.createHandlers(
           over: (values.PaidTo + values.PaidFrom) / 2,
           under: (values.PaidTo + values.PaidFrom) / 2,
         };
+
+      if (
+        values.payType === "date" ||
+        values.payType === "hour" ||
+        values.payType === "fixed"
+      ) {
+        sheet1.getCell("C34").value = "";
+        sheet1.getCell("C35").value = "";
+        sheet1.getCell("C36").value = "";
+      }
+
       sheet1.getCell("C35").value =
-        values.isHour || values.isFixed || values.CalcType === "other"
-          ? ""
-          : `超過：${calcComma(values.OverPrice)}/ｈ${`（月額単価÷${priceExplain.over}h）`}、不足：${calcComma(values.UnderPrice)}/ｈ（月額単価÷${priceExplain.under}h、${10 ** (String(values.OverPrice).split(".")[0].length - values.RoundDigit)}円未満${roundType}）`;
+        values.CalcType === "other"
+          ? `超過：${calcComma(values.OverPrice)}/ｈ、不足：${calcComma(values.UnderPrice)}/ｈ`
+          : `超過：${calcComma(values.OverPrice)}/ｈ${`（月額単価÷${priceExplain.over}h）`}、不足：${calcComma(values.UnderPrice)}/ｈ（月額単価÷${priceExplain.under}h、${10 ** (String(values.OverPrice).split(".")[0].length - values.RoundDigit)}円未満${roundType})`;
 
       sheet1.getCell("R27").value = values.WorkPrice;
 

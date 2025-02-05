@@ -5,7 +5,6 @@ import type { AppType } from "server";
 import type { RoundType } from "~/types/roundType";
 import { calcPeriod } from "~/utils/calcPeriod";
 import { calcPrice } from "~/utils/calcPrice";
-import { datePipe } from "~/utils/datePipe";
 import { dlBlob } from "~/utils/dlBlob";
 import { isHasUndefined } from "~/utils/typeGuard";
 
@@ -16,14 +15,17 @@ export const onSubmit = async <T>({
   roundType,
   roundDigit,
   initial,
+  from,
+  to,
 }: {
   row: Row<T>;
   roundType: RoundType;
   roundDigit: number;
   initial: string;
+  from: string;
+  to: string;
 }) => {
   try {
-    const today = new Date();
     const { overPrice, underPrice } = calcPrice({
       workPrice: row.getValue("workPrice"),
       from: row.getValue("paidFrom"),
@@ -37,10 +39,8 @@ export const onSubmit = async <T>({
       Company: row.getValue("company"),
       Subject: row.getValue("subject"),
       Period: calcPeriod(row.getValue("periodDate")),
-      ClaimFrom: datePipe(
-        new Date(today.getFullYear(), today.getMonth() - 1, 1),
-      ),
-      ClaimTo: datePipe(new Date(today.getFullYear(), today.getMonth(), 0)),
+      ClaimFrom: from,
+      ClaimTo: to,
       Worker: row.getValue("worker"),
       PaidFrom: row.getValue("paidFrom"),
       PaidTo: row.getValue("paidTo"),
@@ -50,6 +50,7 @@ export const onSubmit = async <T>({
       OverTime: 0.0,
       UnderTime: 0.0,
       OtherPrice: 0,
+      OtherItem: "",
       WorkPrice: row.getValue("workPrice"),
       OverPrice: overPrice,
       UnderPrice: underPrice,
@@ -62,8 +63,7 @@ export const onSubmit = async <T>({
         json: {
           ...req,
           url: import.meta.env.VITE_API_URL,
-          isHour: row.getValue("isHour"),
-          isFixed: row.getValue("isFixed"),
+          payType: row.getValue("payType"),
         },
       });
       await dlBlob({

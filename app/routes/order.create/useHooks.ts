@@ -10,6 +10,7 @@ import type { loader } from ".";
 import { calcComma } from "~/utils/price";
 import { submit } from "./submit";
 import { defaultValue } from "~/constants/default";
+import type { PayType } from "~/types/payType";
 
 export const useHook = () => {
   const { contractData } = useLoaderData<typeof loader>();
@@ -83,6 +84,7 @@ export const useHook = () => {
         ...contractData,
         overPrice: OverPrice,
         underPrice: UnderPrice,
+        payType: contractData.payType as PayType,
       },
     });
   };

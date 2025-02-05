@@ -17,6 +17,6 @@ export const CALC_OPTION: {
   view: string;
 }[] = [
   { id: "highLow", value: "highLow", view: "上下割" },
-  { id: "center", value: "center", view: "中央割" },
+  { id: "center", value: "center", view: "中間割" },
   { id: "other", value: "other", view: "その他" },
 ];

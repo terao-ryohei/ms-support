@@ -3,13 +3,7 @@ import { restrictToHorizontalAxis } from "@dnd-kit/modifiers";
 import { hc } from "hono/client";
 import type { AppType } from "server";
 import type { RoundType } from "~/types/roundType";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "~/components/table/dropdown-menu";
-import { EditableTable } from "~/components/table/editable-table";
+import { EditableTable } from "~/components/table/editableTable";
 import { Input } from "~/components/input/input";
 import { onSubmit } from "./submit";
 import { translatedArray, useHooks } from "./useHooks";

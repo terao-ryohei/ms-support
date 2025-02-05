@@ -13,6 +13,8 @@ import {
 } from "./select";
 import { Switch } from "./switch";
 import { Check, ChevronDown, ChevronUp } from "lucide-react";
+import type { Merge } from "type-fest";
+import { cn } from "~/utils/cn";
 
 export interface DateRangePickerProps {
   /** Click handler for applying the updates from DateRangePicker. */
@@ -84,7 +86,12 @@ export function DateRangePicker({
   align = "center",
   locale = "ja-JP",
   showCompare = false,
-}: DateRangePickerProps) {
+  className,
+  name,
+}: Merge<
+  DateRangePickerProps,
+  { className?: string; name?: [string, string, string] }
+>) {
   const [isOpen, setIsOpen] = useState(false);
 
   const [range, setRange] = useState<DateRange>({
@@ -273,14 +280,17 @@ export function DateRangePicker({
     isSelected: boolean;
   }): JSX.Element => (
     <Button
-      className={`hover:bg-accent ${isSelected && "pointer-events-none"}`}
+      className={cn(
+        "hover:bg-accent hover:text-accent-foreground",
+        isSelected && "pointer-events-none",
+      )}
       variant="ghost"
       onClick={() => {
         setPreset(preset);
       }}
     >
       <>
-        <span className={`pr-2 opacity-0 ${isSelected && "opacity-70"}`}>
+        <span className={cn("pr-2 opacity-0", isSelected && "opacity-70")}>
           <Check width={18} height={18} />
         </span>
         {label}
@@ -317,7 +327,7 @@ export function DateRangePicker({
       }}
     >
       <PopoverTrigger asChild>
-        <Button size={"lg"} variant="outline">
+        <Button size={"lg"} variant="outline" className={className}>
           <div className="text-right">
             <div className="py-1">
               <div>{`${formatDate(range.from, locale)}${
@@ -409,6 +419,7 @@ export function DateRangePicker({
                           to: toDate,
                         }));
                       }}
+                      name={name}
                     />
                     <div className="py-1">-</div>
                     <DateInput
@@ -421,6 +432,7 @@ export function DateRangePicker({
                           to: date,
                         }));
                       }}
+                      name={name}
                     />
                   </div>
                   {rangeCompare != null && (
@@ -445,6 +457,7 @@ export function DateRangePicker({
                             });
                           }
                         }}
+                        name={name}
                       />
                       <div className="py-1">-</div>
                       <DateInput
@@ -462,6 +475,7 @@ export function DateRangePicker({
                             });
                           }
                         }}
+                        name={name}
                       />
                     </div>
                   )}

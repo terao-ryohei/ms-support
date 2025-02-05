@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "8650a26d-ce56-4a86-97a9-c3085b12c81c",
-  "prevId": "df8d4b8f-b305-4aac-9a4b-fdff19d9282f",
+  "id": "03d94fad-44ff-46fe-b551-876d4a5d333f",
+  "prevId": "12ee4474-5b62-43f9-a85b-6cc08d8dad38",
   "tables": {
     "companies": {
       "name": "companies",
@@ -44,20 +44,6 @@
           "primaryKey": true,
           "notNull": true,
           "autoincrement": true
-        },
-        "from": {
-          "name": "from",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "to": {
-          "name": "to",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
         },
         "contract_type": {
           "name": "contract_type",
@@ -164,16 +150,23 @@
           "notNull": true,
           "autoincrement": true
         },
-        "is_hour": {
-          "name": "is_hour",
+        "from": {
+          "name": "from",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "is_fixed": {
-          "name": "is_fixed",
+        "to": {
+          "name": "to",
           "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "pay_type": {
+          "name": "pay_type",
+          "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false

@@ -3,7 +3,7 @@ import { restrictToHorizontalAxis } from "@dnd-kit/modifiers";
 import { hc } from "hono/client";
 import type { AppType } from "server";
 import type { RoundType } from "server/api/order/excel";
-import { EditableTable } from "~/components/table/editable-table";
+import { EditableTable } from "~/components/table/editableTable";
 import { Input } from "~/components/input/input";
 import { onSubmit } from "./submit";
 import { translatedArray, useHooks } from "./useHooks";

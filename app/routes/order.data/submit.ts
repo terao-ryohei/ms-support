@@ -69,8 +69,7 @@ export const onSubmit = async <T>({
         json: {
           ...req,
           url: import.meta.env.VITE_API_URL,
-          isHour: row.getValue("isHour"),
-          isFixed: row.getValue("isFixed"),
+          payType: row.getValue("payType"),
         },
       });
       await dlBlob({

@@ -10,6 +10,7 @@ import {
 interface DateInputProps {
   value?: Date;
   onChange: (date: Date) => void;
+  name?: [string, string, string];
 }
 
 interface DateParts {
@@ -18,7 +19,7 @@ interface DateParts {
   year: number;
 }
 
-const DateInput = ({ value, onChange }: DateInputProps) => {
+const DateInput = ({ value, onChange, name }: DateInputProps) => {
   const [date, setDate] = useState<DateParts>(() => {
     const d = value ? new Date(value) : new Date();
     return {
@@ -223,6 +224,7 @@ const DateInput = ({ value, onChange }: DateInputProps) => {
         onBlur={handleBlur("year")}
         className="w-12 border-none p-0 text-center outline-none"
         placeholder="YYYY"
+        name={name ? name[0] : undefined}
       />
       <span className="-mx-px opacity-20">/</span>
       <input
@@ -241,6 +243,7 @@ const DateInput = ({ value, onChange }: DateInputProps) => {
         onBlur={handleBlur("month")}
         className="w-6 border-none p-0 text-center outline-none"
         placeholder="M"
+        name={name ? name[1] : undefined}
       />
       <span className="-mx-px opacity-20">/</span>
       <input
@@ -259,6 +262,7 @@ const DateInput = ({ value, onChange }: DateInputProps) => {
         onBlur={handleBlur("day")}
         className="w-7 border-none p-0 text-center outline-none"
         placeholder="D"
+        name={name ? name[2] : undefined}
       />
     </div>
   );

@@ -15,10 +15,17 @@ CREATE TABLE `contract` (
 	`update` integer DEFAULT (unixepoch()) NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE `pass` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`user_id` integer NOT NULL,
+	`pass` text NOT NULL,
+	`pepper` text NOT NULL,
+	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
 CREATE TABLE `payment` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-	`is_hour` integer NOT NULL,
-	`is_fixed` integer NOT NULL,
+	`pay_type` text NOT NULL,
 	`paid_from` integer NOT NULL,
 	`paid_to` integer NOT NULL,
 	`period_date` text NOT NULL,
@@ -36,6 +43,12 @@ CREATE TABLE `sales` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`name` text NOT NULL,
 	`is_disable` integer NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE `user` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`name` text NOT NULL,
+	`salt` text NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE `workers` (

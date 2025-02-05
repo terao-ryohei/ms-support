@@ -30,28 +30,40 @@ export const getSales = factory.createHandlers(async (c) => {
   const db = dbClient(c.env.DB);
 
   const salesData = await db
-    .select()
+    .select({ id: sales.id, name: sales.name })
     .from(sales)
     .where(eq(sales.isDisable, false))
-    .orderBy(sales.name)
+    .orderBy(sales.id)
     .all();
 
   return c.json(salesData);
 });
 
-export const deleteSales = factory.createHandlers(
+export const getSalesAll = factory.createHandlers(async (c) => {
+  const db = dbClient(c.env.DB);
+
+  const salesData = await db.select().from(sales).orderBy(sales.id).all();
+
+  return c.json(salesData);
+});
+
+export const putSales = factory.createHandlers(
   zValidator(
     "json",
     z.object({
       id: z.number(),
+      values: z.object({
+        isDisable: z.boolean().optional(),
+        name: z.string().optional(),
+      }),
     }),
   ),
   async (c) => {
-    const { id } = c.req.valid("json");
+    const { id, values } = c.req.valid("json");
 
     const res = await dbClient(c.env.DB)
       .update(sales)
-      .set({ isDisable: true })
+      .set({ ...values })
       .where(eq(sales.id, id));
 
     return c.json(res);

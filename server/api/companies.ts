@@ -26,19 +26,23 @@ export const postCompany = factory.createHandlers(
   },
 );
 
-export const deleteCompany = factory.createHandlers(
+export const putCompany = factory.createHandlers(
   zValidator(
     "json",
     z.object({
       id: z.number(),
+      values: z.object({
+        isDisable: z.boolean().optional(),
+        name: z.string().optional(),
+      }),
     }),
   ),
   async (c) => {
-    const { id } = c.req.valid("json");
+    const { id, values } = c.req.valid("json");
 
     const res = await dbClient(c.env.DB)
       .update(companies)
-      .set({ isDisable: true })
+      .set({ ...values })
       .where(eq(companies.id, id));
 
     return c.json(res);
@@ -47,13 +51,19 @@ export const deleteCompany = factory.createHandlers(
 
 export const getCompany = factory.createHandlers(async (c) => {
   const companyData = await dbClient(c.env.DB)
-    .select({
-      id: companies.id,
-      name: companies.name,
-    })
+    .select({ id: companies.id, name: companies.name })
     .from(companies)
     .where(eq(companies.isDisable, false))
-    .orderBy(companies.name); // 並び替え
+    .orderBy(companies.id); // 並び替え
+
+  return c.json(companyData);
+});
+
+export const getCompanyAll = factory.createHandlers(async (c) => {
+  const companyData = await dbClient(c.env.DB)
+    .select()
+    .from(companies)
+    .orderBy(companies.id); // 並び替え
 
   return c.json(companyData);
 });

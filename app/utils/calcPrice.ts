@@ -31,11 +31,11 @@ export function calcPrice({
 
   const digit = roundDigit;
 
-  const opDigit = 10 ** (String(op).split(".")[0].length - digit);
-  const upDigit = 10 ** (String(up).split(".")[0].length - digit);
+  const opDigit = 10 ** digit;
+  const upDigit = 10 ** digit;
 
-  const opRound = op / opDigit;
-  const upRound = up / upDigit;
+  const opRound = Number.isNaN(op / opDigit) ? 0 : op / opDigit;
+  const upRound = Number.isNaN(up / opDigit) ? 0 : up / opDigit;
 
   switch (roundType) {
     case "round":

@@ -7,7 +7,7 @@ import {
   KeyboardSensor,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
-import { useLoaderData } from "@remix-run/react";
+import { Link, useLoaderData, useNavigate } from "@remix-run/react";
 import { compareItems, rankItem } from "@tanstack/match-sorter-utils";
 import {
   type SortingState,
@@ -26,11 +26,10 @@ import {
 } from "@tanstack/react-table";
 import { useState, useCallback, useMemo } from "react";
 import { DateRangePicker } from "~/components/date-picker/date-range-picker";
-import { EditableCell } from "~/components/table/data-table-editable-row";
-import { RemoveRowCell } from "~/components/table/data-table-remove-row";
-import { EditableList } from "~/components/table/editable-list";
+import { EditableCell } from "~/components/table/editableCell";
+import { RemoveRowCell } from "~/components/table/removeRowCell";
+import { EditableList } from "~/components/table/editableList";
 import { useToast } from "~/components/toast/toastProvider";
-import { defaultData } from "~/constants/default";
 import { datePipe } from "~/utils/datePipe";
 import { calcComma } from "~/utils/price";
 import type { loader } from ".";
@@ -45,30 +44,29 @@ export const translatedArray = {
   claimCompany: "顧客",
   orderCompany: "所属",
   subject: "案件名",
-  contractRange: "契約期間",
   claimPrice: "入単価",
   orderPrice: "出単価",
   profit: "粗利",
   profitRatio: "粗利率",
-  claimIsHour: "入時給",
-  claimIsFixed: "入固定",
+  claimPayType: "清算方式",
   claimPaidTo: "入清算上限",
   claimPaidFrom: "入清算下限",
   claimRoundType: "入丸めタイプ",
   claimRoundDigit: "入丸め桁",
   claimPeriodDate: "入金期日",
-  orderIsHour: "出時給",
-  orderIsFixed: "出固定",
+  orderPayType: "清算方式",
   orderPaidTo: "出清算上限",
   orderPaidFrom: "出清算下限",
   orderRoundType: "出丸めタイプ",
   orderRoundDigit: "出丸め桁",
   orderPeriodDate: "出金期日",
+  orderContractRange: "注文期間",
 };
 
 const client = hc<AppType>(import.meta.env.VITE_API_URL);
 
 export const useHooks = () => {
+  const navigate = useNavigate();
   const { contractData, salesData, companiesData, workersData } =
     useLoaderData<typeof loader>();
   type ContractData = typeof contractData extends (infer U)[] ? U : never;
@@ -90,10 +88,10 @@ export const useHooks = () => {
       orderRoundDigit: data.orderPayment.roundDigit,
       claimPeriodDate: data.claimPayment.periodDate,
       orderPeriodDate: data.orderPayment.periodDate,
-      claimIsHour: data.claimPayment.isHour,
-      claimIsFixed: data.claimPayment.isFixed,
-      orderIsHour: data.orderPayment.isHour,
-      orderIsFixed: data.orderPayment.isFixed,
+      claimPayType: data.claimPayment.payType,
+      orderPayType: data.orderPayment.payType,
+      claimContractRange: data.claimPayment.contractRange,
+      orderContractRange: data.orderPayment.contractRange,
     })),
   );
   const [salesList, setSalesList] = useState<typeof salesData>(salesData);
@@ -111,7 +109,7 @@ export const useHooks = () => {
   ]);
 
   const onUpdate = useCallback(
-    (columnId: string, value: string, type: "更新" | "追加" | "削除") => {
+    (columnId: string, value: string, type: "更新" | "追加") => {
       openToast({
         type: "success",
         title: `${type}しました`,
@@ -153,7 +151,14 @@ export const useHooks = () => {
           cell: (c: CellContext<ContractData, string>) => {
             switch (c.column.id) {
               case "id":
-                return <span>{c.cell.getValue()}</span>;
+                return (
+                  <Link
+                    to={`/contract/detail/${c.cell.getValue()}`}
+                    className="underline!"
+                  >
+                    {c.cell.getValue()}
+                  </Link>
+                );
               case "profit":
                 return (
                   <div>
@@ -245,27 +250,6 @@ export const useHooks = () => {
                       setSalesList((list) => [...list, ...res]);
                       onUpdate(c.column.id, value, "追加");
                     }}
-                    onDelete={async (value: number) => {
-                      await (
-                        await client.api.sales.$delete({
-                          json: {
-                            id: value,
-                          },
-                        })
-                      ).json();
-                      setSalesList((list) =>
-                        list.filter(({ id }) => id !== value),
-                      );
-                      onUpdate(
-                        c.column.id,
-                        salesList[
-                          salesList.findIndex(
-                            (data) => data.id === Number(value),
-                          )
-                        ].name,
-                        "削除",
-                      );
-                    }}
                   />
                 );
               case "claimCompany":
@@ -311,27 +295,6 @@ export const useHooks = () => {
                       setCompaniesList((list) => [...list, ...res]);
                       onUpdate(c.column.id, value, "追加");
                     }}
-                    onDelete={async (value: number) => {
-                      await (
-                        await client.api.companies.$delete({
-                          json: {
-                            id: value,
-                          },
-                        })
-                      ).json();
-                      setCompaniesList((list) =>
-                        list.filter(({ id }) => id !== value),
-                      );
-                      onUpdate(
-                        c.column.id,
-                        companiesList[
-                          companiesList.findIndex(
-                            (data) => data.id === Number(value),
-                          )
-                        ].name,
-                        "削除",
-                      );
-                    }}
                   />
                 );
               case "worker":
@@ -369,39 +332,22 @@ export const useHooks = () => {
                       setWorkersList((list) => [...list, ...res]);
                       onUpdate(c.column.id, value, "追加");
                     }}
-                    onDelete={async (value: number) => {
-                      await (
-                        await client.api.workers.$delete({
-                          json: {
-                            id: value,
-                          },
-                        })
-                      ).json();
-                      setWorkersList((list) =>
-                        list.filter(({ id }) => id !== value),
-                      );
-                      onUpdate(
-                        c.column.id,
-                        workersList[
-                          workersList.findIndex(
-                            (data) => data.id === Number(value),
-                          )
-                        ].name,
-                        "削除",
-                      );
-                    }}
                   />
                 );
-              case "contractRange":
+              case "claimContractRange":
+              case "orderContractRange":
                 return (
                   <DateRangePicker
                     initialDateFrom={c.cell.getValue().split("~")[0]}
                     initialDateTo={c.cell.getValue().split("~")[1]}
                     onUpdate={({ range: { from, to } }) => {
                       if (from && to) {
-                        client.api.contract.$put({
+                        client.api.payment.$put({
                           json: {
-                            id: data[c.row.index].id,
+                            id:
+                              c.column.id.indexOf("claim") !== -1
+                                ? data[c.row.index].claimPayment.paymentId
+                                : data[c.row.index].orderPayment.paymentId,
                             values: { from: datePipe(from), to: datePipe(to) },
                           },
                         });
@@ -481,11 +427,15 @@ export const useHooks = () => {
           });
           break;
         }
-        case "contractRange":
-          await client.api.contract.$put({
+        case "claimContractRange":
+        case "orderContractRange":
+          await client.api.payment.$put({
             json: {
               values: { from: value.split("~")[0], to: value.split("~")[1] },
-              id: data[rowIndex].id,
+              id:
+                columnId.indexOf("claim") !== -1
+                  ? data[rowIndex].claimPayment.paymentId
+                  : data[rowIndex].orderPayment.paymentId,
             },
           });
           break;
@@ -542,59 +492,7 @@ export const useHooks = () => {
   );
 
   const addRow = async () => {
-    await (
-      await client.api.contract.$post({
-        json: {
-          contract: {
-            worker: defaultData.worker,
-            company: defaultData.company,
-            sales: defaultData.sales,
-            from: defaultData.contractRange.split("~")[0],
-            to: defaultData.contractRange.split("~")[1],
-            contractType: defaultData.contractType,
-            subject: defaultData.subject,
-            document: defaultData.document,
-          },
-          payment: {
-            paidFrom: defaultData.paidFrom,
-            paidTo: defaultData.paidTo,
-            isHour: defaultData.isHour,
-            periodDate: defaultData.periodDate,
-            workPrice: defaultData.workPrice,
-            roundDigit: defaultData.roundDigit,
-            roundType: defaultData.roundType,
-            calcType: defaultData.calcType,
-            overPrice: defaultData.overPrice,
-            underPrice: defaultData.underPrice,
-            isFixed: defaultData.isFixed,
-          },
-        },
-      })
-    ).json();
-
-    await (await client.api.contract.payment.$get()).json().then((newData) => {
-      setData(
-        newData.map((data) => ({
-          ...data,
-          claimPrice: data.claimPayment.workPrice,
-          orderPrice: data.orderPayment.workPrice,
-          claimPaidTo: data.claimPayment.paidTo,
-          claimPaidFrom: data.claimPayment.paidFrom,
-          claimRoundType: data.claimPayment.roundType,
-          claimRoundDigit: data.claimPayment.roundDigit,
-          orderPaidTo: data.orderPayment.paidTo,
-          orderPaidFrom: data.orderPayment.paidFrom,
-          orderRoundType: data.orderPayment.roundType,
-          orderRoundDigit: data.orderPayment.roundDigit,
-          claimPeriodDate: data.claimPayment.periodDate,
-          orderPeriodDate: data.orderPayment.periodDate,
-          orderIsHour: data.orderPayment.isHour,
-          orderIsFixed: data.orderPayment.isFixed,
-          claimIsHour: data.claimPayment.isHour,
-          claimIsFixed: data.claimPayment.isFixed,
-        })),
-      );
-    });
+    navigate("/contract/detail/new", { state: "/contract/data" });
   };
 
   const removeRow = async (rowIndex: number) => {

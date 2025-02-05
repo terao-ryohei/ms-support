@@ -1,3 +1,11 @@
+import {
+  Action,
+  Cancel,
+  Content,
+  Description,
+  Root,
+  Title,
+} from "@radix-ui/react-alert-dialog";
 import { Link, useLocation } from "@remix-run/react";
 import type { ReactNode } from "react";
 import { ToastProvider } from "~/components/toast/toastProvider";
@@ -25,8 +33,8 @@ export const Layout = ({ children }: { children: ReactNode }) => {
           <li className={pathname === "/" ? "text-accent" : ""}>
             <NavItem href="/" label="Home" />
           </li>
-          <li className={pathname === "/contract" ? "text-accent" : ""}>
-            <NavItem href="/contract" label="契約者一覧" />
+          <li className={pathname === "/contract/data" ? "text-accent" : ""}>
+            <NavItem href="/contract/data" label="契約者一覧" />
           </li>
           <li className={pathname === "/quote/data" ? "text-accent" : ""}>
             <NavItem href="/quote/data" label="見積書作成装置" />
@@ -41,7 +49,9 @@ export const Layout = ({ children }: { children: ReactNode }) => {
       </header>
       <ToastProvider>
         <main className="relative mt-14 flex-grow overflow-y-auto p-4">
-          <section className="h-full">{children}</section>
+          <Root>
+            <section className="h-full">{children}</section>
+          </Root>
         </main>
       </ToastProvider>
     </div>

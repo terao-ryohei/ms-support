@@ -46,16 +46,12 @@ export const insertSampleData = factory.createHandlers(async (c) => {
     .values([
       {
         isDisable: false,
-        from: new Date(),
-        to: new Date(),
         contractType: "業務委託",
         subject: "開発",
         document: "勤怠",
       },
       {
         isDisable: false,
-        from: new Date(),
-        to: new Date(),
         contractType: "準委任",
         subject: "テスト",
         document: "設計書",
@@ -67,10 +63,11 @@ export const insertSampleData = factory.createHandlers(async (c) => {
     .insert(payment)
     .values([
       {
+        from: new Date(),
+        to: new Date(),
         paidTo: 100,
         paidFrom: 180,
-        isHour: false,
-        isDisable: false,
+        payType: "month",
         periodDate: "15s",
         workPrice: 1200,
         roundDigit: 0,
@@ -78,13 +75,14 @@ export const insertSampleData = factory.createHandlers(async (c) => {
         calcType: "center",
         overPrice: 0,
         underPrice: 0,
-        isFixed: false,
+        isDisable: false,
       },
       {
+        from: new Date(),
+        to: new Date(),
         paidTo: 102200,
         paidFrom: 30,
-        isHour: false,
-        isDisable: false,
+        payType: "month",
         periodDate: "15s",
         workPrice: 1200,
         roundDigit: 0,
@@ -92,7 +90,7 @@ export const insertSampleData = factory.createHandlers(async (c) => {
         calcType: "center",
         overPrice: 0,
         underPrice: 0,
-        isFixed: false,
+        isDisable: false,
       },
     ]);
 

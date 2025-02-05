@@ -12,33 +12,50 @@ import {
   Value,
   Viewport,
 } from "@radix-ui/react-select";
-import { CheckIcon, ChevronDownIcon, ChevronUpIcon, X } from "lucide-react";
-import { useState } from "react";
+import { Link } from "@remix-run/react";
+import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react";
+import { useRef } from "react";
+import { cn } from "~/utils/cn";
+import { Button } from "../input/button";
 
 export function EditableList({
   data,
   value,
   onChange,
   onAdd,
-  onDelete,
+  className,
+  name,
 }: {
   data: { id: number; name: string }[];
   value: number;
   onChange: (id: string) => void;
   onAdd: (id: string) => Promise<void>;
-  onDelete: (id: number) => Promise<void>;
+  className?: string;
+  name?: string;
 }) {
-  const [addData, setAddData] = useState("");
+  const addData = useRef("");
 
   return (
-    <Select defaultValue={String(value)} onValueChange={onChange}>
-      <Trigger className="flex gap-2 rounded-md bg-[#fcfcfc] px-2 py-1">
-        <Value />
+    <Select
+      name={name}
+      defaultValue={String(value)}
+      required
+      onValueChange={onChange}
+    >
+      <Trigger
+        className={cn(
+          "flex items-center gap-2 rounded-md bg-[#fcfcfc] px-2 py-1",
+          className,
+        )}
+      >
+        <div className="h-full w-full content-center">
+          <Value />
+        </div>
         <Icon className="SelectIcon">
           <ChevronDownIcon />
         </Icon>
       </Trigger>
-      <Content className="overflow-hidden rounded-md bg-slate-200">
+      <Content className="z-[100] overflow-hidden rounded-md bg-slate-200">
         <ScrollUpButton className="flex h-[25px] items-center justify-center bg-white text-lime-500">
           <ChevronUpIcon />
         </ScrollUpButton>
@@ -54,34 +71,31 @@ export function EditableList({
                 </ItemIndicator>
                 <ItemText>{name}</ItemText>
               </Item>
-              <span className="flex items-center justify-center rounded-md hover:bg-slate-50">
-                <button
-                  type="button"
-                  onClick={() => {
-                    onDelete(id);
-                  }}
-                >
-                  <X size={20} />
-                </button>
-              </span>
             </div>
           ))}
           <Separator className="my-1 h-[1px] bg-slate-600" />
-          <div className="flex gap-2">
+          <div className="my-4 flex gap-2">
             <input
               placeholder="新規追加"
               className="rounded-sm px-2 py-1"
-              onChange={(e) => setAddData(e.target.value)}
+              onChange={(e) => {
+                addData.current = e.target.value;
+              }}
             />
             <button
               type="button"
               onClick={() => {
-                onAdd(addData);
+                onAdd(addData.current);
               }}
-              className="rounded-md bg-secondary px-2 py-1"
+              className="rounded-md bg-secondary px-2 py-1 text-white hover:bg-secondary-hover"
             >
               追加
             </button>
+          </div>
+          <div className="flex justify-center gap-2">
+            <Link to="/data">
+              <Button>表示データの管理</Button>
+            </Link>
           </div>
         </Viewport>
         <ScrollDownButton className="flex h-[25px] items-center justify-center bg-white text-lime-500">

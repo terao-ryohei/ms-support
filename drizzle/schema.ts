@@ -25,8 +25,6 @@ export const workers = sqliteTable("workers", {
 // Contract テーブル
 export const contract = sqliteTable("contract", {
   id: integer("id").primaryKey({ autoIncrement: true }).notNull(),
-  from: integer("from", { mode: "timestamp" }).notNull(),
-  to: integer("to", { mode: "timestamp" }).notNull(),
   contractType: text("contract_type").notNull(),
   subject: text("subject").notNull(),
   document: text("document").notNull(),
@@ -39,8 +37,9 @@ export const contract = sqliteTable("contract", {
 // Payment テーブル
 export const payment = sqliteTable("payment", {
   id: integer("id").primaryKey({ autoIncrement: true }).notNull(),
-  isHour: integer("is_hour", { mode: "boolean" }).notNull(),
-  isFixed: integer("is_fixed", { mode: "boolean" }).notNull(),
+  from: integer("from", { mode: "timestamp" }).notNull(),
+  to: integer("to", { mode: "timestamp" }).notNull(),
+  payType: text("pay_type").notNull(),
   paidFrom: integer("paid_from").notNull(),
   paidTo: integer("paid_to").notNull(),
   periodDate: text("period_date").notNull(),

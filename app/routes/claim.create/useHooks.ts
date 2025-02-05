@@ -1,5 +1,5 @@
 import { useLoaderData } from "@remix-run/react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useWatch } from "react-hook-form";
 import { useRemixForm } from "remix-hook-form";
 import type { ClaimValues } from "server/api/claim/excel";
@@ -12,6 +12,7 @@ import { datePipe } from "~/utils/datePipe";
 import { calcComma } from "~/utils/price";
 import type { loader } from ".";
 import { submit } from "./submit";
+import type { PayType } from "~/types/payType";
 
 export const useHook = () => {
   const today = new Date();
@@ -39,8 +40,14 @@ export const useHook = () => {
       CalcType: contractData.calcType as CalcType,
       RoundDigit: contractData.roundDigit,
       Subject: contractData.subject,
+      OtherItem: "",
     },
   });
+
+  const [date, setDate] = useState<(Date | undefined)[]>([
+    new Date(contractData.contractRange.split("~")[0]),
+    new Date(contractData.contractRange.split("~")[1]),
+  ]);
 
   const {
     WorkPrice = 0,
@@ -75,6 +82,14 @@ export const useHook = () => {
     setValue,
   ]);
 
+  const onDateUpdate = ({
+    range: { from, to },
+  }: { range: { from?: Date; to?: Date } }) => {
+    if (from && to) {
+      setDate([from, to]);
+    }
+  };
+
   const onSubmit = () => {
     submit({
       value: getValues(),
@@ -82,6 +97,7 @@ export const useHook = () => {
         ...contractData,
         overPrice: OverPrice,
         underPrice: UnderPrice,
+        payType: contractData.payType as PayType,
       },
     });
   };
@@ -108,6 +124,8 @@ export const useHook = () => {
       comma: calcComma(UnderPrice),
     },
     WorkPrice: calcComma(WorkPrice),
+    date,
+    onDateUpdate,
     PaidFrom,
     PaidTo,
     CalcTypeValue,

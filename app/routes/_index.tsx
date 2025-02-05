@@ -8,7 +8,7 @@ export default function Index() {
       </h1>
       <ul className="mx-auto mt-4 rounded-md border-2 border-secondary border-solid p-0">
         <li className="border-b-[1px] border-b-teal-600 border-solid text-xl even:bg-muted/50">
-          <Link className="block h-full w-full px-10 py-4" to="/contract">
+          <Link className="block h-full w-full px-10 py-4" to="/contract/data">
             契約者一覧
           </Link>
         </li>

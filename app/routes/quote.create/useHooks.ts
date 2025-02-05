@@ -11,6 +11,7 @@ import type { CalcType } from "~/types/calcType";
 import { calcComma } from "~/utils/price";
 import type { loader } from ".";
 import { defaultValue } from "~/constants/default";
+import type { PayType } from "~/types/payType";
 
 export const useHooks = () => {
   const { contractData } = useLoaderData<typeof loader>();
@@ -85,6 +86,7 @@ export const useHooks = () => {
         ...contractData,
         overPrice: OverPrice,
         underPrice: UnderPrice,
+        payType: contractData.payType as PayType,
       },
     });
   };

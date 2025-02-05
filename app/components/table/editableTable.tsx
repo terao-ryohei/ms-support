@@ -7,8 +7,8 @@ import {
   type Table as TableType,
   flexRender,
 } from "@tanstack/react-table";
-import { DraggableTableHeader } from "./data-table-column-header";
-import { DragAlongCell } from "./drag-along-cell";
+import { HeaderCell } from "./headerCell";
+import { DraggableCellWrapper } from "./draggableCellWrapper";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "./table";
 import { Button } from "../input/button";
 import {
@@ -16,55 +16,63 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from "./dropdown-menu";
+} from "./dropdownMenu";
 
 export function EditableTable<T, U>({
   columns,
   headerList,
   table,
   columnOrder,
+  isHeaderView = true,
 }: {
   columns: ColumnDef<T>[];
   headerList: U extends Record<string, string> ? U : never;
   table: TableType<T>;
   columnOrder: string[];
+  isHeaderView?: boolean;
 }) {
   return (
-    <div className="flex h-full flex-col space-y-4">
-      <div className="flex justify-end gap-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className="cursor-pointer rounded-sm border border-gray-400 px-2 text-gray-600 hover:bg-gray-200"
-            >
-              表示する列を選択する
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter(
-                (column) =>
-                  column.getCanHide() &&
-                  Object.keys(headerList).includes(column.id),
-              )
-              .map((column) => (
-                <DropdownMenuCheckboxItem
-                  key={column.id}
-                  className="capitalize"
-                  checked={column.getIsVisible()}
-                  onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                >
-                  {headerList[column.id as keyof typeof headerList]}
-                </DropdownMenuCheckboxItem>
-              ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <Button props={{ onClick: table.options.meta?.addRow, type: "button" }}>
-          新しい行を追加する
-        </Button>
-      </div>
+    <div className="flex h-[90%] flex-col space-y-4">
+      {isHeaderView && (
+        <div className="flex justify-end gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="cursor-pointer rounded-sm border border-gray-400 px-2 text-gray-600 hover:bg-gray-200"
+              >
+                表示する列を選択する
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {table
+                .getAllColumns()
+                .filter(
+                  (column) =>
+                    column.getCanHide() &&
+                    Object.keys(headerList).includes(column.id),
+                )
+                .map((column) => (
+                  <DropdownMenuCheckboxItem
+                    key={column.id}
+                    className="capitalize"
+                    checked={column.getIsVisible()}
+                    onCheckedChange={(value) =>
+                      column.toggleVisibility(!!value)
+                    }
+                  >
+                    {headerList[column.id as keyof typeof headerList]}
+                  </DropdownMenuCheckboxItem>
+                ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button
+            props={{ onClick: table.options.meta?.addRow, type: "button" }}
+          >
+            新しい行を追加する
+          </Button>
+        </div>
+      )}
       <Table>
         <TableHeader>
           <SortableContext
@@ -77,7 +85,7 @@ export function EditableTable<T, U>({
                 className="sticky top-[0] left-[0]"
               >
                 {headerGroup.headers.map((header) => (
-                  <DraggableTableHeader
+                  <HeaderCell
                     key={header.id}
                     header={header}
                     data={headerList[header.id as keyof typeof headerList]}
@@ -106,7 +114,7 @@ export function EditableTable<T, U>({
                       items={columnOrder}
                       strategy={horizontalListSortingStrategy}
                     >
-                      <DragAlongCell key={id} cell={cell} />
+                      <DraggableCellWrapper key={id} cell={cell} />
                     </SortableContext>
                   );
                 })}

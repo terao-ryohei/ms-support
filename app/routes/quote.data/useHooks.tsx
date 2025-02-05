@@ -7,7 +7,7 @@ import {
   KeyboardSensor,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
-import { Link, useLoaderData } from "@remix-run/react";
+import { Link, useLoaderData, useNavigate } from "@remix-run/react";
 import { compareItems, rankItem } from "@tanstack/match-sorter-utils";
 import {
   type SortingState,
@@ -29,10 +29,9 @@ import { useState, useCallback, useMemo } from "react";
 import { useRemixForm } from "remix-hook-form";
 import type { AppType } from "server";
 import { DateRangePicker } from "~/components/date-picker/date-range-picker";
-import { EditableCell } from "~/components/table/data-table-editable-row";
-import { EditableList } from "~/components/table/editable-list";
+import { EditableCell } from "~/components/table/editableCell";
+import { EditableList } from "~/components/table/editableList";
 import { useToast } from "~/components/toast/toastProvider";
-import { defaultData } from "~/constants/default";
 import type { CalcType } from "~/types/calcType";
 import type { RoundType } from "~/types/roundType";
 import { calcPrice } from "~/utils/calcPrice";
@@ -41,14 +40,13 @@ import type { loader } from ".";
 
 export const translatedArray = {
   id: "契約ID",
-  isHour: "時給",
-  isFixed: "固定",
-  worker: "作業従事者",
+  worker: "作業者名",
+  payType: "清算方式",
   company: "見積先企業",
   sales: "客先営業担当者",
-  subject: "件名",
+  subject: "案件名",
   contractType: "契約形態",
-  contractRange: "契約期間",
+  contractRange: "請求期間",
   periodDate: "支払期日",
   document: "成果物",
   workPrice: "単価",
@@ -62,6 +60,8 @@ export const translatedArray = {
 const client = hc<AppType>(import.meta.env.VITE_API_URL);
 
 export const useHooks = () => {
+  const navigate = useNavigate();
+
   const { contractData, salesData, companiesData, workersData } =
     useLoaderData<typeof loader>();
   type ContractData = typeof contractData extends (infer U)[] ? U : never;
@@ -89,7 +89,7 @@ export const useHooks = () => {
   });
 
   const onUpdate = useCallback(
-    (columnId: string, value: string, type: "更新" | "追加" | "削除") => {
+    (columnId: string, value: string, type: "更新" | "追加") => {
       openToast({
         type: "success",
         title: `${type}しました`,
@@ -192,27 +192,6 @@ export const useHooks = () => {
                       setSalesList((list) => [...list, ...res]);
                       onUpdate(c.column.id, value, "追加");
                     }}
-                    onDelete={async (value: number) => {
-                      await (
-                        await client.api.sales.$delete({
-                          json: {
-                            id: value,
-                          },
-                        })
-                      ).json();
-                      setSalesList((list) =>
-                        list.filter(({ id }) => id !== value),
-                      );
-                      onUpdate(
-                        c.column.id,
-                        salesList[
-                          salesList.findIndex(
-                            (data) => data.id === Number(value),
-                          )
-                        ].name,
-                        "削除",
-                      );
-                    }}
                   />
                 );
               case "company":
@@ -249,27 +228,6 @@ export const useHooks = () => {
                       ).json();
                       setCompaniesList((list) => [...list, ...res]);
                       onUpdate(c.column.id, value, "追加");
-                    }}
-                    onDelete={async (value: number) => {
-                      await (
-                        await client.api.companies.$delete({
-                          json: {
-                            id: value,
-                          },
-                        })
-                      ).json();
-                      setCompaniesList((list) =>
-                        list.filter(({ id }) => id !== value),
-                      );
-                      onUpdate(
-                        c.column.id,
-                        companiesList[
-                          companiesList.findIndex(
-                            (data) => data.id === Number(value),
-                          )
-                        ].name,
-                        "削除",
-                      );
                     }}
                   />
                 );
@@ -308,27 +266,6 @@ export const useHooks = () => {
                       setWorkersList((list) => [...list, ...res]);
                       onUpdate(c.column.id, value, "追加");
                     }}
-                    onDelete={async (value: number) => {
-                      await (
-                        await client.api.workers.$delete({
-                          json: {
-                            id: value,
-                          },
-                        })
-                      ).json();
-                      setWorkersList((list) =>
-                        list.filter(({ id }) => id !== value),
-                      );
-                      onUpdate(
-                        c.column.id,
-                        workersList[
-                          workersList.findIndex(
-                            (data) => data.id === Number(value),
-                          )
-                        ].name,
-                        "削除",
-                      );
-                    }}
                   />
                 );
               case "contractRange":
@@ -338,9 +275,9 @@ export const useHooks = () => {
                     initialDateTo={c.cell.getValue().split("~")[1]}
                     onUpdate={({ range: { from, to } }) => {
                       if (from && to) {
-                        client.api.contract.$put({
+                        client.api.payment.$put({
                           json: {
-                            id: data[c.row.index].id,
+                            id: data[c.row.index].paymentId,
                             values: { from: datePipe(from), to: datePipe(to) },
                           },
                         });
@@ -420,10 +357,10 @@ export const useHooks = () => {
           });
           break;
         case "contractRange":
-          await client.api.contract.$put({
+          await client.api.payment.$put({
             json: {
               values: { from: value.split("~")[0], to: value.split("~")[1] },
-              id: data[rowIndex].id,
+              id: data[rowIndex].paymentId,
             },
           });
           break;
@@ -460,39 +397,7 @@ export const useHooks = () => {
   );
 
   const addRow = async () => {
-    await client.api.contract.$post({
-      json: {
-        contract: {
-          worker: defaultData.worker,
-          company: defaultData.company,
-          sales: defaultData.sales,
-          from: defaultData.contractRange.split("~")[0],
-          to: defaultData.contractRange.split("~")[1],
-          contractType: defaultData.contractType,
-          subject: defaultData.subject,
-          document: defaultData.document,
-        },
-        payment: {
-          paidFrom: defaultData.paidFrom,
-          paidTo: defaultData.paidTo,
-          isHour: defaultData.isHour,
-          periodDate: defaultData.periodDate,
-          workPrice: defaultData.workPrice,
-          roundDigit: defaultData.roundDigit,
-          roundType: defaultData.roundType,
-          calcType: defaultData.calcType,
-          overPrice: defaultData.overPrice,
-          underPrice: defaultData.underPrice,
-          isFixed: defaultData.isFixed,
-        },
-      },
-    });
-
-    await (await client.api.contract.all.$get({ query: { type: "customer" } }))
-      .json()
-      .then((newData) => {
-        setData(newData);
-      });
+    navigate("/contract/detail/new", { state: "/quote/data" });
   };
 
   const table = useReactTable({

@@ -14,7 +14,7 @@ export const putPayment = factory.createHandlers(
       values: z.object({
         paidFrom: z.number().optional(),
         paidTo: z.number().optional(),
-        isHour: z.boolean().optional(),
+        payType: z.string().optional(),
         periodDate: z.string().optional(),
         workPrice: z.number().optional(),
         roundDigit: z.number().optional(),
@@ -22,7 +22,8 @@ export const putPayment = factory.createHandlers(
         calcType: z.string().optional(),
         overPrice: z.number().optional(),
         underPrice: z.number().optional(),
-        isFixed: z.boolean().optional(),
+        from: z.string().optional(),
+        to: z.string().optional(),
       }),
       id: z.number(),
     }),
@@ -32,12 +33,16 @@ export const putPayment = factory.createHandlers(
 
     const req = {
       ...values,
+      from: values.from ? new Date(values.from) : undefined,
+      to: values.to ? new Date(values.to) : undefined,
       isDisable: false,
     };
 
     await dbClient(c.env.DB)
       .update(payment)
-      .set({ ...req })
+      .set({
+        ...req,
+      })
       .where(eq(payment.id, id));
 
     return c.json({ result: "success" });

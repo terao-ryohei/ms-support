@@ -55,8 +55,7 @@ export const createQuote = factory.createHandlers(
       ContractType: z.string(), // 契約形態
       url: z.string(),
       RoundDigit: z.number(),
-      isHour: z.boolean(),
-      isFixed: z.boolean(),
+      payType: z.string(),
       CalcType: z.string(),
     }),
   ),
@@ -123,8 +122,9 @@ export const createQuote = factory.createHandlers(
       sheet1.getCell("M26").value = ContractToDay;
 
       let contractHour = `${(values.PaidFrom + values.PaidTo) / 2}±${(values.PaidFrom + values.PaidTo) / 2 - values.PaidFrom}`;
-      if (values.isHour) contractHour = "時間清算";
-      if (values.isFixed) contractHour = "固定清算";
+      if (values.payType === "hour") contractHour = "時間清算";
+      if (values.payType === "fixed") contractHour = "固定清算";
+      if (values.payType === "date") contractHour = "日当清算";
 
       sheet1.getCell("B27").value = values.Worker;
       sheet1.getCell("E27").value = `（${contractHour}）`;
@@ -135,10 +135,11 @@ export const createQuote = factory.createHandlers(
       sheet1.getCell("P27").value =
         values.ContractRange < 1 ? 1 : values.ContractRange;
 
-      let paidHour = `${values.PaidFrom}h～${values.PaidTo}h`;
-      if (values.isFixed) paidHour = "160h";
-      sheet1.getCell("C35").value =
-        `基準時間を${paidHour}とし、稼働時間の過不足単価は、`;
+      let payMethod = `基準時間を${values.PaidFrom}h～${values.PaidTo}hとし、稼働時間の過不足単価は、`;
+      if (values.payType === "fixed") payMethod = "固定清算とします。";
+      if (values.payType === "date") payMethod = "日当清算とします。";
+      if (values.payType === "hour") payMethod = "時給清算とします。";
+      sheet1.getCell("C35").value = payMethod;
 
       let roundType = "四捨五入";
       if (values.RoundType === "cail") roundType = "切上げ";
@@ -149,6 +150,16 @@ export const createQuote = factory.createHandlers(
       if (values.CalcType === "other")
         priceExplain = `超過：${calcComma(values.OverPrice)}、控除：${calcComma(values.UnderPrice)}（${10 ** (String(values.OverPrice).split(".")[0].length - values.RoundDigit)}円未満${roundType}）`;
       sheet1.getCell("C36").value = priceExplain;
+
+      if (
+        values.payType === "fixed" ||
+        values.payType === "date" ||
+        values.payType === "hour"
+      ) {
+        sheet1.getCell("C36").value = "";
+        sheet1.getCell("C37").value = "";
+        sheet1.getCell("C38").value = "";
+      }
 
       const excelBuffer = await workbook.xlsx.writeBuffer();
 

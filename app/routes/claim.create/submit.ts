@@ -1,6 +1,7 @@
 import { hc } from "hono/client";
 import type { AppType } from "server";
 import type { ClaimValues } from "server/api/claim/excel";
+import type { PayType } from "~/types/payType";
 import { dlBlob } from "~/utils/dlBlob";
 import { isHasUndefined } from "~/utils/typeGuard";
 
@@ -16,8 +17,7 @@ export const submit = async ({
     worker = "",
     overPrice,
     underPrice,
-    isFixed,
-    isHour,
+    payType,
   },
 }: {
   value: ClaimValues;
@@ -29,8 +29,7 @@ export const submit = async ({
     worker: string | null;
     overPrice: number;
     underPrice: number;
-    isHour: boolean;
-    isFixed: boolean;
+    payType: PayType;
   };
 }) => {
   try {
@@ -71,8 +70,7 @@ export const submit = async ({
           json: {
             ...formData,
             url: import.meta.env.VITE_API_URL,
-            isHour: isHour,
-            isFixed: isFixed,
+            payType,
           },
         });
         await dlBlob({
