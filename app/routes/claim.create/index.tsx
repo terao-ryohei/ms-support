@@ -5,9 +5,11 @@ import { LeftData } from "~/layouts/leftData";
 import { contractLoader } from "./loader";
 import { useHook } from "./useHooks";
 import type { PayType } from "~/types/payType";
-import { useNavigate } from "@remix-run/react";
+import { type MetaFunction, useNavigate } from "@remix-run/react";
 import { useCallback, useMemo } from "react";
 import { DateRangePicker } from "~/components/date-picker/date-range-picker";
+
+export const meta: MetaFunction = () => [{ title: "請求書作成装置" }];
 
 export const loader = contractLoader;
 

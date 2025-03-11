@@ -2,6 +2,9 @@ import { hc } from "hono/client";
 import type { AppType } from "server";
 import { EditableTable } from "~/components/table/editableTable";
 import { translatedArray, useHooks } from "./useHooks";
+import type { MetaFunction } from "@remix-run/react";
+
+export const meta: MetaFunction = () => [{ title: "データ管理" }];
 
 const client = hc<AppType>(import.meta.env.VITE_API_URL);
 

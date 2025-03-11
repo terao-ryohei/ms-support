@@ -7,6 +7,9 @@ import { EditableTable } from "~/components/table/editableTable";
 import { Input } from "~/components/input/input";
 import { onSubmit } from "./submit";
 import { translatedArray, useHooks } from "./useHooks";
+import type { MetaFunction } from "@remix-run/react";
+
+export const meta: MetaFunction = () => [{ title: "見積書作成装置" }];
 
 const client = hc<AppType>(import.meta.env.VITE_API_URL);
 

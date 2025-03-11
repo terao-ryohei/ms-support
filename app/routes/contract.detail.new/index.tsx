@@ -6,7 +6,9 @@ import { Button } from "~/components/input/button";
 import { defaultData } from "~/constants/default";
 import { onSubmit } from "./submit";
 import { useHooks } from "./useHooks";
-import { useNavigate, useLocation } from "@remix-run/react";
+import { useNavigate, useLocation, type MetaFunction } from "@remix-run/react";
+
+export const meta: MetaFunction = () => [{ title: "契約者一覧" }];
 
 const client = hc<AppType>(import.meta.env.VITE_API_URL);
 
