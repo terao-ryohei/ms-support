@@ -7,7 +7,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
-import { Link, useLoaderData, useNavigate } from "@remix-run/react";
+import { Link, useLoaderData, useNavigate } from "react-router";
 import { compareItems, rankItem } from "@tanstack/match-sorter-utils";
 import {
   type CellContext,

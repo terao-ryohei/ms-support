@@ -4,7 +4,8 @@ import { hc } from "hono/client";
 import type { AppType } from "server";
 import { EditableTable } from "~/components/table/editableTable";
 import { translatedArray, useHooks } from "./useHooks";
-import type { MetaFunction } from "@remix-run/react";
+import type { MetaFunction } from "react-router";
+import { useId } from "react";
 
 export const meta: MetaFunction = () => [{ title: "契約者一覧" }];
 
@@ -20,9 +21,11 @@ export const loader = async () => {
 
 export default function Index() {
   const { sensors, table, columns, columnOrder, handleDragEnd } = useHooks();
+  const dndContextId = useId();
 
   return (
     <DndContext
+      id={dndContextId}
       collisionDetection={closestCenter}
       modifiers={[restrictToHorizontalAxis]}
       onDragEnd={handleDragEnd}

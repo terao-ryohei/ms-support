@@ -1,4 +1,4 @@
-import { Link, type MetaFunction } from "@remix-run/react";
+import { Link, type MetaFunction } from "react-router";
 
 export const meta: MetaFunction = () => [{ title: "MS部契約管理システム" }];
 

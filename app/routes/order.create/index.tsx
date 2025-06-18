@@ -6,7 +6,7 @@ import { LeftData } from "~/layouts/leftData";
 import { contractLoader } from "./loader";
 import { useHook } from "./useHooks";
 import type { PayType } from "~/types/payType";
-import { type MetaFunction, useNavigate } from "@remix-run/react";
+import { type MetaFunction, useNavigate } from "react-router";
 import { useCallback, useMemo } from "react";
 
 export const meta: MetaFunction = () => [{ title: "注文書作成装置" }];

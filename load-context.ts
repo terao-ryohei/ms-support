@@ -1,10 +1,10 @@
-import type { AppLoadContext } from "@remix-run/cloudflare";
+import type { AppLoadContext } from "react-router";
 import type { Context } from "hono";
 import type { PlatformProxy } from "wrangler";
 
-type Cloudflare = Omit<PlatformProxy<Env["Bindings"]>, "dispose">;
+type Cloudflare = Omit<PlatformProxy, "dispose">;
 
-declare module "@remix-run/cloudflare" {
+declare module "react-router" {
   interface AppLoadContext {
     cloudflare: Cloudflare;
     extra: string;
@@ -22,7 +22,6 @@ type GetLoadContext = (args: {
   };
 }) => AppLoadContext;
 
-// Shared implementation compatible with Vite, Wrangler, and Cloudflare Pages
 export const getLoadContext: GetLoadContext = ({ context }) => {
   return {
     ...context,

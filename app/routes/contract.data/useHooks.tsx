@@ -7,7 +7,7 @@ import {
   KeyboardSensor,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
-import { Link, useLoaderData, useNavigate } from "@remix-run/react";
+import { Link, useLoaderData, useNavigate } from "react-router";
 import { compareItems, rankItem } from "@tanstack/match-sorter-utils";
 import {
   type SortingState,
@@ -161,7 +161,7 @@ export const useHooks = () => {
                 );
               case "profit":
                 return (
-                  <div>
+                  (<div>
                     {calcComma(
                       Number(
                         String(c.row.getValue("claimPrice")).replaceAll(
@@ -176,11 +176,11 @@ export const useHooks = () => {
                           ),
                         ),
                     )}
-                  </div>
+                  </div>)
                 );
               case "profitRatio":
                 return (
-                  <div>
+                  (<div>
                     {Math.round(
                       ((Number(
                         String(c.row.getValue("claimPrice")).replaceAll(
@@ -203,9 +203,8 @@ export const useHooks = () => {
                         100 *
                         10 ** 3,
                     ) /
-                      10 ** 3}
-                    %
-                  </div>
+                      10 ** 3}%
+                                      </div>)
                 );
               case "claimSales":
               case "orderSales":

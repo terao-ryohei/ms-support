@@ -8,7 +8,7 @@ import { InputWrapper } from "~/components/input/inputWrapper";
 import { LeftData } from "~/layouts/leftData";
 import { Container } from "~/components/container";
 import type { PayType } from "~/types/payType";
-import { useNavigate, type MetaFunction } from "@remix-run/react";
+import { useNavigate, type MetaFunction } from "react-router";
 import { useCallback, useMemo } from "react";
 
 export const meta: MetaFunction = () => [{ title: "見積書作成装置" }];

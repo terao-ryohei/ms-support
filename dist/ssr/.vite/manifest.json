@@ -1,0 +1,8 @@
+{
+  "worker.ts": {
+    "file": "index.js",
+    "name": "worker",
+    "src": "worker.ts",
+    "isEntry": true
+  }
+}

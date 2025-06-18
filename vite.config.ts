@@ -1,31 +1,36 @@
 // vite.config.ts
 import adapter from "@hono/vite-dev-server/cloudflare";
-import serverAdapter from "hono-remix-adapter/vite";
+import serverAdapter from "hono-react-router-adapter/vite";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
-import { getLoadContext } from "./load-context";
+// import { getLoadContext } from "./load-context";
 import { resolve } from "node:path";
-import {
-  vitePlugin as remix,
-  cloudflareDevProxyVitePlugin as remixCloudflareDevProxy,
-} from "@remix-run/dev";
+import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
+  ssr: {
+    target: "webworker",
+    resolve: {
+      conditions: ["workerd", "worker", "browser"],
+      externalConditions: ["workerd", "worker"],
+    },
+    optimizeDeps: {
+      include: [
+        "react",
+        "react/jsx-runtime",
+        "react/jsx-dev-runtime",
+        "react-dom",
+        "react-dom/server",
+        "react-router",
+      ],
+    },
+  },
   plugins: [
-    remixCloudflareDevProxy(),
-    remix({
-      future: {
-        v3_fetcherPersist: true,
-        v3_relativeSplatPath: true,
-        v3_throwAbortReason: true,
-        v3_lazyRouteDiscovery: true,
-        v3_singleFetch: true,
-      },
-    }),
+    reactRouter(),
     serverAdapter({
       adapter,
-      getLoadContext,
+      // getLoadContext,
       entry: "server/index.ts",
     }),
     tsconfigPaths(),
@@ -35,8 +40,5 @@ export default defineConfig({
     alias: {
       "~": resolve(".", "app"),
     },
-  },
-  build: {
-    minify: true,
   },
 });

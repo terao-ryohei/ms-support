@@ -9,9 +9,9 @@ import { onSubmit } from "./submit";
 import type { RoundType } from "~/types/roundType";
 import { DateRangePicker } from "~/components/date-picker/date-range-picker";
 import { addDays, addMonths, setDate } from "date-fns";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { datePipe } from "~/utils/datePipe";
-import type { MetaFunction } from "@remix-run/react";
+import type { MetaFunction } from "react-router";
 
 export const meta: MetaFunction = () => [{ title: "請求書作成装置" }];
 
@@ -30,6 +30,8 @@ export const loader = async () => {
 };
 
 export default function Index() {
+  const dndContextId = useId();
+
   const {
     sensors,
     table,
@@ -62,6 +64,7 @@ export default function Index() {
 
   return (
     <DndContext
+      id={dndContextId}
       collisionDetection={closestCenter}
       modifiers={[restrictToHorizontalAxis]}
       onDragEnd={handleDragEnd}

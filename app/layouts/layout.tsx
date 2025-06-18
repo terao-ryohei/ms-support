@@ -6,7 +6,7 @@ import {
   Root,
   Title,
 } from "@radix-ui/react-alert-dialog";
-import { Link, useLocation } from "@remix-run/react";
+import { Link, useLocation } from "react-router";
 import type { ReactNode } from "react";
 import { ToastProvider } from "~/components/toast/toastProvider";
 
@@ -16,11 +16,7 @@ type NavItemProps = {
 };
 
 export const NavItem = ({ href, label }: NavItemProps) => {
-  return (
-    <li>
-      <Link to={href}>{label}</Link>
-    </li>
-  );
+  return <Link to={href}>{label}</Link>;
 };
 
 export const Layout = ({ children }: { children: ReactNode }) => {
@@ -47,13 +43,13 @@ export const Layout = ({ children }: { children: ReactNode }) => {
           </li>
         </ul>
       </header>
-      <ToastProvider>
-        <main className="relative mt-14 flex-grow overflow-y-auto p-4">
-          <Root>
-            <section className="h-full">{children}</section>
-          </Root>
-        </main>
-      </ToastProvider>
+      {/* <ToastProvider> */}
+      <main className="relative mt-14 flex-grow overflow-y-auto p-4">
+        <Root>
+          <section className="h-full">{children}</section>
+        </Root>
+      </main>
+      {/* </ToastProvider> */}
     </div>
   );
 };

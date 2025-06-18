@@ -1,4 +1,4 @@
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData } from "react-router";
 import { compareItems, rankItem } from "@tanstack/match-sorter-utils";
 import {
   type SortingState,

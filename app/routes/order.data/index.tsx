@@ -7,7 +7,8 @@ import { EditableTable } from "~/components/table/editableTable";
 import { Input } from "~/components/input/input";
 import { onSubmit } from "./submit";
 import { translatedArray, useHooks } from "./useHooks";
-import type { MetaFunction } from "@remix-run/react";
+import type { MetaFunction } from "react-router";
+import { useId } from "react";
 
 export const meta: MetaFunction = () => [{ title: "注文書作成装置" }];
 
@@ -26,6 +27,8 @@ export const loader = async () => {
 };
 
 export default function Index() {
+  const dndContextId = useId();
+
   const {
     sensors,
     table,
@@ -51,6 +54,7 @@ export default function Index() {
 
   return (
     <DndContext
+      id={dndContextId}
       collisionDetection={closestCenter}
       modifiers={[restrictToHorizontalAxis]}
       onDragEnd={handleDragEnd}

@@ -1,0 +1,31 @@
+{
+  "/Users/terao/Work/ms-support/app/tailwind.css": {
+    "file": "assets/tailwind-BLREoQjZ.css",
+    "src": "/Users/terao/Work/ms-support/app/tailwind.css"
+  },
+  "_index-CpjgmDZa.js": {
+    "file": "assets/index-CpjgmDZa.js",
+    "name": "index"
+  },
+  "app/root.tsx?__react-router-build-client-route": {
+    "file": "assets/root-D6CNdSTY.js",
+    "name": "root",
+    "src": "app/root.tsx?__react-router-build-client-route",
+    "isEntry": true,
+    "imports": [
+      "_index-CpjgmDZa.js"
+    ],
+    "assets": [
+      "assets/tailwind-BLREoQjZ.css"
+    ]
+  },
+  "node_modules/@react-router/dev/dist/config/defaults/entry.client.tsx": {
+    "file": "assets/entry.client-CwC3hRe4.js",
+    "name": "entry.client",
+    "src": "node_modules/@react-router/dev/dist/config/defaults/entry.client.tsx",
+    "isEntry": true,
+    "imports": [
+      "_index-CpjgmDZa.js"
+    ]
+  }
+}

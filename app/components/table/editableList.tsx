@@ -12,7 +12,7 @@ import {
   Value,
   Viewport,
 } from "@radix-ui/react-select";
-import { Link } from "@remix-run/react";
+import { Link } from "react-router";
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { useRef } from "react";
 import { cn } from "~/utils/cn";

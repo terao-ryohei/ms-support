@@ -1,12 +1,12 @@
 import { hc } from "hono/client";
 import type { AppType } from "server";
-import { redirect, type LoaderFunctionArgs } from "@remix-run/cloudflare";
+import { redirect, type LoaderFunctionArgs } from "react-router";
 import { DateRangePicker } from "~/components/date-picker/date-range-picker";
 import { EditableList } from "~/components/table/editableList";
 import { Button } from "~/components/input/button";
 import { useHooks } from "./useHooks";
 import { onSubmit } from "./submit";
-import { useNavigate, type MetaFunction } from "@remix-run/react";
+import { useNavigate, type MetaFunction } from "react-router";
 
 export const meta: MetaFunction = () => [{ title: "契約者一覧" }];
 
